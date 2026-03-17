@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+./node_modules/*
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# NestJS
+backend/dist/
+
+# Prisma
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
+*.zip

@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id                String    @id @default(cuid())
+  firstName         String
+  lastName          String
+  email             String    @unique
+  password          String
+  openaiApiKey      String?
+  anthropicApiKey   String?
+  preferredProvider String    @default("openai")
+  createdAt         DateTime  @default(now())
+  projects          Project[]
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  prompts     Prompt[]
+}
+
+model Prompt {
+  id        String          @id @default(cuid())
+  name      String
+  projectId String
+  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions  PromptVersion[]
+  suites    TestSuite[]
+  createdAt DateTime        @default(now())
+}
+
+model PromptVersion {
+  id        String     @id @default(cuid())
+  version   Int
+  template  String     @db.Text
+  promptId  String
+  prompt    Prompt     @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  evalRuns  EvalRun[]
+  createdAt DateTime   @default(now())
+}
+
+model TestSuite {
+  id        String     @id @default(cuid())
+  name      String
+  promptId  String
+  prompt    Prompt     @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  cases     TestCase[]
+  createdAt DateTime   @default(now())
+}
+
+model TestCase {
+  id         String       @id @default(cuid())
+  input      String       @db.Text
+  checkType  String
+  checkValue String       @db.Text
+  suiteId    String
+  suite      TestSuite    @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  results    EvalResult[]
+  createdAt  DateTime     @default(now())
+}
+
+model EvalRun {
+  id              String        @id @default(cuid())
+  promptVersionId String
+  promptVersion   PromptVersion @relation(fields: [promptVersionId], references: [id], onDelete: Cascade)
+  suiteId         String
+  score           Float
+  totalCases      Int
+  passedCases     Int
+  results         EvalResult[]
+  createdAt       DateTime      @default(now())
+}
+
+model EvalResult {
+  id         String   @id @default(cuid())
+  evalRunId  String
+  evalRun    EvalRun  @relation(fields: [evalRunId], references: [id], onDelete: Cascade)
+  testCaseId String
+  testCase   TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  passed     Boolean
+  output     String   @db.Text
+  score      Float?
+  reason     String?  @db.Text
+  createdAt  DateTime @default(now())
+}

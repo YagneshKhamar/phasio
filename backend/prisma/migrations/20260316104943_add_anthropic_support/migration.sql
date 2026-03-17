@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `user` ADD COLUMN `anthropicApiKey` VARCHAR(191) NULL,
+    ADD COLUMN `preferredProvider` VARCHAR(191) NOT NULL DEFAULT 'openai';
