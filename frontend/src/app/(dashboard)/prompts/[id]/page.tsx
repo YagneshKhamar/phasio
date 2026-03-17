@@ -403,6 +403,8 @@ export default function PromptPage() {
                           className="w-full bg-[#1a1a1a] border border-[#222222] text-[#fafafa] font-mono text-xs focus:border-amber-400 focus:outline-none rounded px-3 py-2"
                         >
                           <option value="contains">contains</option>
+                          <option value="not_contains">not_contains</option>
+                          <option value="regex">regex</option>
                           <option value="llm_judge">llm_judge</option>
                         </select>
                         <Input

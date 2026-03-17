@@ -84,3 +84,6 @@ export const updatePassword = (data: {
   currentPassword: string;
   newPassword: string;
 }) => api.patch("/users/password", data).then((r) => r.data);
+
+export const getEvalComparisons = (promptId: string) =>
+  api.get(`/evals/comparisons/${promptId}`).then((r) => r.data);

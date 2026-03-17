@@ -265,7 +265,7 @@ export default function SettingsPage() {
                 className="w-full bg-[#1a1a1a] border border-[#222222] text-[#fafafa] font-mono text-sm focus:border-amber-400 focus:outline-none rounded px-3 py-2"
               >
                 <option value="openai">OpenAI — gpt-4o-mini</option>
-                <option value="anthropic">Anthropic — claude-3-haiku</option>
+                <option value="anthropic">Anthropic — claude-haiku-4-5</option>
               </select>
               <p className="text-xs text-[#555555] font-mono">
                 This provider will be used for all eval runs

@@ -66,4 +66,15 @@ export class EvalsController {
   ) {
     return this.evalsService.getRunById(req.user.userId, runId);
   }
+
+  @Get('comparisons/:promptId')
+  @ApiOperation({ summary: 'Get A/B comparison history for a prompt' })
+  @ApiParam({ name: 'promptId', description: 'Prompt ID' })
+  @ApiResponse({ status: 200, description: 'Comparison history returned' })
+  getComparisons(
+    @Request() req: { user: { userId: string } },
+    @Param('promptId') promptId: string,
+  ) {
+    return this.evalsService.getComparisons(req.user.userId, promptId);
+  }
 }

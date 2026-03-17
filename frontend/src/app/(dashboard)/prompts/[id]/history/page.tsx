@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getPrompt, getEvalHistory } from "@/lib/api-functions";
+import { getPrompt, getEvalComparisons } from "@/lib/api-functions";
 
 interface EvalResult {
   id: string;
@@ -13,6 +13,7 @@ interface EvalResult {
   output: string;
   score: number | null;
   reason: string | null;
+  latencyMs: number | null;
   testCase: {
     input: string;
     checkType: string;
@@ -33,6 +34,14 @@ interface EvalRun {
   results: EvalResult[];
 }
 
+interface EvalComparison {
+  id: string;
+  winner: string | null;
+  createdAt: string;
+  runA: EvalRun;
+  runB: EvalRun;
+}
+
 interface Prompt {
   id: string;
   name: string;
@@ -48,9 +57,9 @@ export default function HistoryPage() {
     enabled: !!id,
   });
 
-  const { data: history = [], isLoading } = useQuery<EvalRun[]>({
-    queryKey: ["eval-history", id],
-    queryFn: () => getEvalHistory(id),
+  const { data: comparisons = [], isLoading } = useQuery<EvalComparison[]>({
+    queryKey: ["eval-comparisons", id],
+    queryFn: () => getEvalComparisons(id),
     enabled: !!id,
   });
 
@@ -69,13 +78,37 @@ export default function HistoryPage() {
     </div>
   );
 
+  const ScoreDisplay = ({
+    score,
+    isWinner,
+  }: {
+    score: number;
+    isWinner: boolean;
+  }) => (
+    <div className="text-right">
+      <span
+        className={`font-mono text-xl font-bold ${
+          isWinner
+            ? "text-green-400"
+            : score >= 80
+              ? "text-green-400"
+              : score >= 50
+                ? "text-amber-400"
+                : "text-red-400"
+        }`}
+      >
+        {score.toFixed(0)}%
+      </span>
+    </div>
+  );
+
   if (isLoading) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-24 bg-[#111111] border border-[#222222] rounded animate-pulse"
+            className="h-32 bg-[#111111] border border-[#222222] rounded animate-pulse"
           />
         ))}
       </div>
@@ -117,7 +150,8 @@ export default function HistoryPage() {
             Eval History
           </h1>
           <p className="text-[#888888] text-sm mt-1">
-            {history.length} run{history.length !== 1 ? "s" : ""} total
+            {comparisons.length} A/B comparison
+            {comparisons.length !== 1 ? "s" : ""} total
           </p>
         </div>
         <Link
@@ -128,84 +162,154 @@ export default function HistoryPage() {
         </Link>
       </div>
 
-      {/* History list */}
-      {history.length === 0 ? (
+      {/* Comparisons list */}
+      {comparisons.length === 0 ? (
         <div className="text-center py-20 border border-dashed border-[#222222] rounded">
           <p className="font-mono text-[#888888]">No eval runs yet</p>
           <p className="text-sm text-[#555555] mt-1">
-            Run your first eval to see results here
+            Run your first A/B eval to see results here
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {history.map((run) => (
-            <Card key={run.id} className="bg-[#111111] border-[#222222]">
+        <div className="space-y-6">
+          {comparisons.map((comparison) => (
+            <Card key={comparison.id} className="bg-[#111111] border-[#222222]">
               <CardHeader className="pb-3 pt-4 px-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Badge className="bg-amber-400/10 text-amber-400 border-amber-400/20 font-mono text-xs">
-                      v{run.promptVersion.version}
-                    </Badge>
                     <span className="text-xs font-mono text-[#555555]">
-                      {new Date(run.createdAt).toLocaleString()}
+                      {new Date(comparison.createdAt).toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`font-mono text-lg font-bold ${
-                        run.score >= 80
-                          ? "text-green-400"
-                          : run.score >= 50
-                            ? "text-amber-400"
-                            : "text-red-400"
-                      }`}
-                    >
-                      {run.score.toFixed(0)}%
-                    </span>
-                    <span className="text-xs font-mono text-[#555555]">
-                      {run.passedCases}/{run.totalCases} passed
-                    </span>
+                  {/* Winner banner */}
+                  <div
+                    className={`text-xs font-mono px-3 py-1 rounded border ${
+                      comparison.winner === "tie"
+                        ? "border-[#333333] text-[#888888] bg-[#1a1a1a]"
+                        : "border-green-400/30 text-green-400 bg-green-400/5"
+                    }`}
+                  >
+                    {comparison.winner === "A"
+                      ? `✓ v${comparison.runA.promptVersion.version} wins`
+                      : comparison.winner === "B"
+                        ? `✓ v${comparison.runB.promptVersion.version} wins`
+                        : "= Tie"}
                   </div>
                 </div>
-                <ScoreBar score={run.score} />
               </CardHeader>
 
-              <CardContent className="px-5 pb-4 space-y-2">
+              <CardContent className="px-5 pb-5">
+                {/* Side by side scores */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  {[
+                    {
+                      run: comparison.runA,
+                      label: "Version A",
+                      isWinner: comparison.winner === "A",
+                    },
+                    {
+                      run: comparison.runB,
+                      label: "Version B",
+                      isWinner: comparison.winner === "B",
+                    },
+                  ].map(({ run, label, isWinner }) => (
+                    <div
+                      key={run.id}
+                      className={`p-4 rounded border ${
+                        isWinner
+                          ? "border-green-400/20 bg-green-400/5"
+                          : "border-[#222222] bg-[#0a0a0a]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-[#555555]">
+                            {label}
+                          </span>
+                          <Badge className="bg-amber-400/10 text-amber-400 border-amber-400/20 font-mono text-xs">
+                            v{run.promptVersion.version}
+                          </Badge>
+                          {isWinner && (
+                            <Badge className="bg-green-400/10 text-green-400 border-green-400/20 font-mono text-xs">
+                              winner
+                            </Badge>
+                          )}
+                        </div>
+                        <ScoreDisplay score={run.score} isWinner={isWinner} />
+                      </div>
+                      <ScoreBar score={run.score} />
+                      <p className="text-xs font-mono text-[#555555] mt-2">
+                        {run.passedCases}/{run.totalCases} passed
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Case by case results */}
                 <CardTitle className="font-mono text-xs text-[#555555] uppercase tracking-wider mb-3">
                   Results
                 </CardTitle>
-                {run.results.map((result) => (
-                  <div
-                    key={result.id}
-                    className="flex items-start gap-3 p-3 bg-[#0a0a0a] rounded border border-[#222222]"
-                  >
-                    <Badge
-                      className={`font-mono text-xs shrink-0 mt-0.5 ${
-                        result.passed
-                          ? "bg-green-400/10 text-green-400 border-green-400/20"
-                          : "bg-red-400/10 text-red-400 border-red-400/20"
-                      }`}
-                    >
-                      {result.passed ? "✓" : "✗"}
-                    </Badge>
-                    <div className="flex-1 space-y-1 min-w-0">
-                      <p className="text-xs font-mono text-[#888888]">
-                        {result.testCase?.input ?? "N/A"}
-                      </p>
-                      <p className="text-xs font-mono text-[#555555] truncate">
-                        → {result.output}
-                      </p>
-                      {result.score !== null && (
-                        <p className="text-xs font-mono text-[#444444]">
-                          score: {result.score}/10 — {result.reason}
-                        </p>
-                      )}
-                    </div>
-                    <Badge className="bg-[#1a1a1a] text-[#555555] border-[#222222] font-mono text-xs shrink-0">
-                      {result.testCase.checkType}
-                    </Badge>
-                  </div>
-                ))}
+                <div className="space-y-2">
+                  {comparison.runA.results.map((resultA, index) => {
+                    const resultB = comparison.runB.results[index];
+                    return (
+                      <div
+                        key={resultA.id}
+                        className="border border-[#222222] rounded overflow-hidden"
+                      >
+                        {/* Input row */}
+                        <div className="bg-[#0a0a0a] px-3 py-2 border-b border-[#222222]">
+                          <p className="text-xs font-mono text-[#555555] uppercase tracking-wider mb-0.5">
+                            Input
+                          </p>
+                          <p className="text-xs font-mono text-[#888888]">
+                            {resultA.testCase?.input}
+                          </p>
+                        </div>
+
+                        {/* Side by side outputs */}
+                        <div className="grid grid-cols-2 divide-x divide-[#222222]">
+                          {[
+                            { result: resultA, label: "Version A" },
+                            { result: resultB, label: "Version B" },
+                          ].map(({ result, label }) => (
+                            <div key={label} className="p-3 space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-mono text-[#555555]">
+                                  {label}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  {result?.latencyMs != null && (
+                                    <span className="text-xs font-mono text-[#444444]">
+                                      ⏱ {result.latencyMs}ms
+                                    </span>
+                                  )}
+                                  <Badge
+                                    className={`font-mono text-xs ${
+                                      result?.passed
+                                        ? "bg-green-400/10 text-green-400 border-green-400/20"
+                                        : "bg-red-400/10 text-red-400 border-red-400/20"
+                                    }`}
+                                  >
+                                    {result?.passed ? "✓ pass" : "✗ fail"}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <p className="text-xs font-mono text-[#888888] leading-relaxed line-clamp-3">
+                                {result?.output}
+                              </p>
+                              {result?.score != null && (
+                                <p className="text-xs font-mono text-[#555555]">
+                                  score: {result.score}/10 — {result.reason}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </CardContent>
             </Card>
           ))}

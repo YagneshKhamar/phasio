@@ -37,12 +37,12 @@ Version your prompts, define test cases, run A/B comparisons, and catch regressi
 
 ## Tech Stack
 
-| Layer         | Stack                                                         |
-| ------------- | ------------------------------------------------------------- |
-| Frontend      | Next.js 16, React 19, TailwindCSS v4, TanStack Query, Zustand |
-| Backend       | NestJS 11, Prisma 7, MariaDB, JWT auth                        |
-| LLM Providers | OpenAI (`gpt-4o-mini`), Anthropic (`claude-3-haiku-20240307`) |
-| API Docs      | Swagger (auto-generated at `/api`)                            |
+| Layer         | Stack                                                           |
+| ------------- | --------------------------------------------------------------- |
+| Frontend      | Next.js 16, React 19, TailwindCSS v4, TanStack Query, Zustand   |
+| Backend       | NestJS 11, Prisma 7, MariaDB, JWT auth                          |
+| LLM Providers | OpenAI (`gpt-4o-mini`), Anthropic (`claude-haiku-4-5-20251001`) |
+| API Docs      | Swagger (auto-generated at `/api`)                              |
 
 ---
 

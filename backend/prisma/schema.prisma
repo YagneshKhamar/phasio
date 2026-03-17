@@ -30,13 +30,14 @@ model Project {
 }
 
 model Prompt {
-  id        String          @id @default(cuid())
-  name      String
-  projectId String
-  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  versions  PromptVersion[]
-  suites    TestSuite[]
-  createdAt DateTime        @default(now())
+  id           String          @id @default(cuid())
+  name         String
+  projectId    String
+  project      Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions     PromptVersion[]
+  suites       TestSuite[]
+  comparisons  EvalComparison[]
+  createdAt    DateTime        @default(now())
 }
 
 model PromptVersion {
@@ -70,15 +71,30 @@ model TestCase {
 }
 
 model EvalRun {
-  id              String        @id @default(cuid())
+  id              String          @id @default(cuid())
   promptVersionId String
-  promptVersion   PromptVersion @relation(fields: [promptVersionId], references: [id], onDelete: Cascade)
+  promptVersion   PromptVersion   @relation(fields: [promptVersionId], references: [id], onDelete: Cascade)
   suiteId         String
   score           Float
   totalCases      Int
   passedCases     Int
   results         EvalResult[]
-  createdAt       DateTime      @default(now())
+  comparisonAsA   EvalComparison? @relation("RunA")
+  comparisonAsB   EvalComparison? @relation("RunB")
+  createdAt       DateTime        @default(now())
+}
+
+model EvalComparison {
+  id        String   @id @default(cuid())
+  promptId  String
+  prompt    Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  suiteId   String
+  runAId    String   @unique
+  runA      EvalRun  @relation("RunA", fields: [runAId], references: [id], onDelete: Cascade)
+  runBId    String   @unique
+  runB      EvalRun  @relation("RunB", fields: [runBId], references: [id], onDelete: Cascade)
+  winner    String?
+  createdAt DateTime @default(now())
 }
 
 model EvalResult {
@@ -91,5 +107,6 @@ model EvalResult {
   output     String   @db.Text
   score      Float?
   reason     String?  @db.Text
+  latencyMs  Int?
   createdAt  DateTime @default(now())
 }

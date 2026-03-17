@@ -1,29 +1,30 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsIn } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class UpdateSettingsDto {
-  @ApiProperty({ required: false })
-  @IsOptional()
+  @ApiPropertyOptional()
   @IsString()
+  @IsOptional()
   firstName?: string;
 
-  @ApiProperty({ required: false })
-  @IsOptional()
+  @ApiPropertyOptional()
   @IsString()
+  @IsOptional()
   lastName?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  openaiApiKey?: string;
+  @Transform(({ value }) => (value === '' ? null : value))
+  openaiApiKey?: string | null;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  anthropicApiKey?: string;
+  @Transform(({ value }) => (value === '' ? null : value))
+  anthropicApiKey?: string | null;
 
-  @ApiProperty({ required: false, enum: ['openai', 'anthropic'] })
-  @IsOptional()
+  @ApiPropertyOptional()
   @IsIn(['openai', 'anthropic'])
+  @IsOptional()
   preferredProvider?: string;
 }

@@ -48,11 +48,15 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id: userId },
       data: {
-        ...(dto.firstName && { firstName: dto.firstName }),
-        ...(dto.lastName && { lastName: dto.lastName }),
-        ...(dto.openaiApiKey && { openaiApiKey: dto.openaiApiKey }),
-        ...(dto.anthropicApiKey && { anthropicApiKey: dto.anthropicApiKey }),
-        ...(dto.preferredProvider && {
+        ...(dto.firstName !== undefined && { firstName: dto.firstName }),
+        ...(dto.lastName !== undefined && { lastName: dto.lastName }),
+        ...(dto.openaiApiKey !== undefined && {
+          openaiApiKey: dto.openaiApiKey,
+        }),
+        ...(dto.anthropicApiKey !== undefined && {
+          anthropicApiKey: dto.anthropicApiKey,
+        }),
+        ...(dto.preferredProvider !== undefined && {
           preferredProvider: dto.preferredProvider,
         }),
       },

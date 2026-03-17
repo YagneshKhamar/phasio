@@ -45,6 +45,7 @@ interface EvalResult {
   passed: boolean;
   score: number | null;
   reason: string | null;
+  latencyMs: number | null;
 }
 
 interface EvalRunResult {
@@ -375,6 +376,11 @@ export default function EvalPage() {
                           {result.score !== null && (
                             <p className="text-xs font-mono text-[#555555]">
                               score: {result.score}/10 — {result.reason}
+                            </p>
+                          )}
+                          {result.latencyMs !== null && (
+                            <p className="text-xs font-mono text-[#444444]">
+                              ⏱ {result.latencyMs}ms
                             </p>
                           )}
                         </div>
