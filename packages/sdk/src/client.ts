@@ -17,6 +17,13 @@ export class PromptEval {
   private readonly providers: ProviderConfig[];
 
   constructor(config: PromptEvalConfig) {
+    console.log("Initializing PromptEval client...");
+    console.log({ "Configured providers:": config });
+    console.log(
+      "process.env.PROMPTEVAL_BASE_URL",
+      process.env.PROMPTEVAL_BASE_URL,
+    );
+    console.log(`Using API base URL: ${config.baseUrl ?? DEFAULT_BASE_URL}`);
     this.config = config;
     this.providers = Array.isArray(config.providers)
       ? config.providers

@@ -5,6 +5,8 @@ export async function validateApiKey(
   apiKey: string,
   baseUrl: string,
 ): Promise<void> {
+  console.log("Validating PromptEval API key...");
+  console.log("base url", baseUrl);
   const url = new URL("/api-keys/validate", baseUrl);
   const body = JSON.stringify({ key: apiKey });
 
