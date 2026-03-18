@@ -9,8 +9,8 @@ import { runForProvider } from "./runner";
 import { printResults, printError } from "./output";
 import { validateApiKey } from "./auth";
 
-const DEFAULT_BASE_URL = "http://localhost:2000";
-// process.env.PROMPTEVAL_BASE_URL ?? "https://api.prompteval.dev"; // update to prod URL on deployment
+const DEFAULT_BASE_URL =
+  process.env.PROMPTEVAL_BASE_URL ?? "https://api.prompteval.dev"; // update to prod URL on deployment
 
 export class PromptEval {
   private readonly config: PromptEvalConfig;
