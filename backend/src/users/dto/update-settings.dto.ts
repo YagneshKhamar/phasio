@@ -27,4 +27,14 @@ export class UpdateSettingsDto {
   @IsIn(['openai', 'anthropic'])
   @IsOptional()
   preferredProvider?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  openaiModel?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  anthropicModel?: string;
 }

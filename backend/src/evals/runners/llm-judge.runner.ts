@@ -6,6 +6,7 @@ export async function runLlmJudge(
   criteria: string,
   apiKey: string,
   provider: 'openai' | 'anthropic' = 'openai',
+  model?: string,
 ): Promise<{ passed: boolean; score: number; reason: string }> {
   const systemPrompt = `You are an evaluator. Score the given output against the criteria from 1-10.
 Respond ONLY with a valid JSON object in this exact format:
@@ -14,13 +15,17 @@ No markdown, no backticks, just raw JSON.`;
 
   const userPrompt = `Criteria: ${criteria}\n\nOutput to evaluate: ${output}`;
 
+  const defaultModel =
+    provider === 'anthropic' ? 'claude-haiku-4-5-20251001' : 'gpt-4o-mini';
+  const resolvedModel = model ?? defaultModel;
+
   let raw = '{}';
 
   try {
     if (provider === 'anthropic') {
       const client = new Anthropic({ apiKey });
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: resolvedModel,
         max_tokens: 256,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
@@ -30,7 +35,7 @@ No markdown, no backticks, just raw JSON.`;
     } else {
       const client = new OpenAI({ apiKey });
       const response = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: resolvedModel,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },

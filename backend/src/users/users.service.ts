@@ -23,13 +23,13 @@ export class UsersService {
         openaiApiKey: true,
         anthropicApiKey: true,
         preferredProvider: true,
+        openaiModel: true,
+        anthropicModel: true,
         createdAt: true,
       },
     });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    if (!user) throw new NotFoundException('User not found');
 
     return {
       ...user,
@@ -59,6 +59,10 @@ export class UsersService {
         ...(dto.preferredProvider !== undefined && {
           preferredProvider: dto.preferredProvider,
         }),
+        ...(dto.openaiModel !== undefined && { openaiModel: dto.openaiModel }),
+        ...(dto.anthropicModel !== undefined && {
+          anthropicModel: dto.anthropicModel,
+        }),
       },
       select: {
         id: true,
@@ -66,30 +70,25 @@ export class UsersService {
         lastName: true,
         email: true,
         preferredProvider: true,
+        openaiModel: true,
+        anthropicModel: true,
       },
     });
   }
 
   async updatePassword(userId: string, dto: UpdatePasswordDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    if (!user) throw new NotFoundException('User not found');
 
     const passwordMatch = await bcrypt.compare(
       dto.currentPassword,
       user.password,
     );
-
-    if (!passwordMatch) {
+    if (!passwordMatch)
       throw new UnauthorizedException('Current password is incorrect');
-    }
 
     const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
-
     await this.prisma.user.update({
       where: { id: userId },
       data: { password: hashedPassword },

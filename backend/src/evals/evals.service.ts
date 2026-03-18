@@ -21,7 +21,6 @@ type EvalResult = {
   latencyMs: number;
 };
 
-// Run promises in batches to avoid hammering rate limits
 async function runWithConcurrency<T>(
   tasks: (() => Promise<T>)[],
   concurrency: number,
@@ -55,6 +54,8 @@ export class EvalsService {
         openaiApiKey: true,
         anthropicApiKey: true,
         preferredProvider: true,
+        openaiModel: true,
+        anthropicModel: true,
       },
     });
 
@@ -75,6 +76,10 @@ export class EvalsService {
 
     const apiKey =
       provider === 'openai' ? user!.openaiApiKey! : user!.anthropicApiKey!;
+    const model =
+      provider === 'openai'
+        ? user!.openaiModel || 'gpt-4o-mini'
+        : user!.anthropicModel || 'claude-haiku-4-5-20251001';
 
     const versionA = await this.prisma.promptVersion.findUnique({
       where: { id: dto.versionAId },
@@ -99,17 +104,31 @@ export class EvalsService {
     if (!suite) throw new NotFoundException('Test suite not found');
 
     const [runA, runB] = await Promise.all([
-      this.executeRun(versionA.id, versionA.template, suite, apiKey, provider),
-      this.executeRun(versionB.id, versionB.template, suite, apiKey, provider),
+      this.executeRun(
+        versionA.id,
+        versionA.template,
+        suite,
+        apiKey,
+        provider,
+        model,
+        'web',
+      ),
+      this.executeRun(
+        versionB.id,
+        versionB.template,
+        suite,
+        apiKey,
+        provider,
+        model,
+        'web',
+      ),
     ]);
 
-    // Determine winner
     let winner: string;
     if (runA.score > runB.score) winner = 'A';
     else if (runB.score > runA.score) winner = 'B';
     else winner = 'tie';
 
-    // Save comparison linking both runs
     await this.prisma.evalComparison.create({
       data: {
         promptId: versionA.promptId,
@@ -141,8 +160,9 @@ export class EvalsService {
     },
     apiKey: string,
     provider: 'openai' | 'anthropic',
+    model: string,
+    source: 'web' | 'sdk',
   ) {
-    // Build one task per test case
     const tasks = suite.cases.map(
       (testCase) => async (): Promise<EvalResult> => {
         const prompt = template.replace('{{input}}', testCase.input);
@@ -153,7 +173,7 @@ export class EvalsService {
           if (provider === 'anthropic') {
             const client = new Anthropic({ apiKey });
             const response = await client.messages.create({
-              model: 'claude-haiku-4-5-20251001',
+              model,
               max_tokens: 1024,
               messages: [{ role: 'user', content: prompt }],
             });
@@ -162,7 +182,7 @@ export class EvalsService {
           } else {
             const client = new OpenAI({ apiKey });
             const response = await client.chat.completions.create({
-              model: 'gpt-4o-mini',
+              model,
               messages: [{ role: 'user', content: prompt }],
               temperature: 0,
             });
@@ -170,12 +190,10 @@ export class EvalsService {
           }
         } catch (err: unknown) {
           const error = err as { status?: number; message?: string };
-          if (error.status === 401) {
+          if (error.status === 401)
             throw new Error(`Invalid ${provider} API key`);
-          }
-          if (error.status === 429) {
+          if (error.status === 429)
             throw new Error(`${provider} quota exceeded — check your billing`);
-          }
           throw new Error(
             `${provider} error: ${error.message ?? 'Unknown error'}`,
           );
@@ -201,6 +219,7 @@ export class EvalsService {
             testCase.checkValue,
             apiKey,
             provider,
+            model,
           );
           passed = judgeResult.passed;
           score = judgeResult.score;
@@ -219,7 +238,6 @@ export class EvalsService {
       },
     );
 
-    // Max 5 concurrent LLM calls per run to respect rate limits
     const results = await runWithConcurrency(tasks, 5);
 
     const passedCount = results.filter((r) => r.passed).length;
@@ -233,6 +251,9 @@ export class EvalsService {
         score: evalScore,
         totalCases: totalCount,
         passedCases: passedCount,
+        provider,
+        model,
+        source,
         results: {
           create: results.map((r) => ({
             testCaseId: r.testCaseId,
@@ -254,34 +275,6 @@ export class EvalsService {
       totalCases: totalCount,
       results,
     };
-  }
-
-  async getHistory(userId: string, promptId: string) {
-    const prompt = await this.prisma.prompt.findUnique({
-      where: { id: promptId },
-      include: { project: true },
-    });
-
-    if (!prompt) {
-      throw new NotFoundException('Prompt not found');
-    }
-
-    if (prompt.project.userId !== userId) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    return this.prisma.evalRun.findMany({
-      where: {
-        promptVersion: { promptId },
-      },
-      include: {
-        promptVersion: true,
-        results: {
-          include: { testCase: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
   }
 
   async getComparisons(userId: string, promptId: string) {
@@ -314,28 +307,40 @@ export class EvalsService {
     });
   }
 
+  async getHistory(userId: string, promptId: string) {
+    const prompt = await this.prisma.prompt.findUnique({
+      where: { id: promptId },
+      include: { project: true },
+    });
+
+    if (!prompt) throw new NotFoundException('Prompt not found');
+    if (prompt.project.userId !== userId)
+      throw new ForbiddenException('Access denied');
+
+    return this.prisma.evalRun.findMany({
+      where: { promptVersion: { promptId } },
+      include: {
+        promptVersion: true,
+        results: { include: { testCase: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async getRunById(userId: string, runId: string) {
     const run = await this.prisma.evalRun.findUnique({
       where: { id: runId },
       include: {
         promptVersion: {
-          include: {
-            prompt: { include: { project: true } },
-          },
+          include: { prompt: { include: { project: true } } },
         },
-        results: {
-          include: { testCase: true },
-        },
+        results: { include: { testCase: true } },
       },
     });
 
-    if (!run) {
-      throw new NotFoundException('Eval run not found');
-    }
-
-    if (run.promptVersion.prompt.project.userId !== userId) {
+    if (!run) throw new NotFoundException('Eval run not found');
+    if (run.promptVersion.prompt.project.userId !== userId)
       throw new ForbiddenException('Access denied');
-    }
 
     return run;
   }

@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProjectsModule } from './projects/projects.module';
 import { PromptsModule } from './prompts/prompts.module';
 import { UsersModule } from './users/users.module';
+import { ApiKeysModule } from './api-keys/api-keys.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UsersModule } from './users/users.module';
     EvalsModule,
     PrismaModule,
     UsersModule,
+    ApiKeysModule,
   ],
   controllers: [AppController],
   providers: [AppService],

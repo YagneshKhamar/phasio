@@ -1,7 +1,10 @@
 {
-  "name": "frontend",
+  "name": "prompteval-frontend",
   "version": "0.1.0",
   "private": true,
+  "description": "This is the frontend for PromptEval, a platform for evaluating and comparing the performance of different language models on various tasks.",
+  "author": "Yagnesh Khamar <AppUnik>",
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

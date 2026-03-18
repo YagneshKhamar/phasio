@@ -1,8 +1,8 @@
 {
-  "name": "backend",
+  "name": "prompteval-backend",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "This is the backend for PromptEval, a platform for evaluating and comparing the performance of different language models on various tasks.",
+  "author": "Yagnesh Khamar <AppUnik>",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

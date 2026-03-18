@@ -65,11 +65,26 @@ export const runEval = (data: {
   suiteId: string;
 }) => api.post("/evals/run", data).then((r) => r.data);
 
+export const getEvalComparisons = (promptId: string) =>
+  api.get(`/evals/comparisons/${promptId}`).then((r) => r.data);
+
 export const getEvalHistory = (promptId: string) =>
   api.get(`/evals/prompt/${promptId}`).then((r) => r.data);
 
 export const getEvalRun = (runId: string) =>
   api.get(`/evals/run/${runId}`).then((r) => r.data);
+
+// API Keys
+export const getApiKeys = () => api.get("/api-keys").then((r) => r.data);
+
+export const createApiKey = (data: { name: string }) =>
+  api.post("/api-keys", data).then((r) => r.data);
+
+export const revokeApiKey = (id: string) =>
+  api.patch(`/api-keys/${id}/revoke`).then((r) => r.data);
+
+export const deleteApiKey = (id: string) =>
+  api.delete(`/api-keys/${id}`).then((r) => r.data);
 
 // Users
 export const getProfile = () => api.get("/users/profile").then((r) => r.data);
@@ -78,12 +93,13 @@ export const updateSettings = (data: {
   firstName?: string;
   lastName?: string;
   openaiApiKey?: string;
+  anthropicApiKey?: string;
+  preferredProvider?: string;
+  openaiModel?: string;
+  anthropicModel?: string;
 }) => api.patch("/users/settings", data).then((r) => r.data);
 
 export const updatePassword = (data: {
   currentPassword: string;
   newPassword: string;
 }) => api.patch("/users/password", data).then((r) => r.data);
-
-export const getEvalComparisons = (promptId: string) =>
-  api.get(`/evals/comparisons/${promptId}`).then((r) => r.data);
