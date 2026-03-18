@@ -1,0 +1,37 @@
+{
+  "name": "prompteval",
+  "version": "0.1.0",
+  "description": "Test and evaluate LLM prompts before production. A/B compare prompt versions with rule-based and LLM-as-a-judge checks.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "llm",
+    "prompt",
+    "evaluation",
+    "testing",
+    "openai",
+    "anthropic",
+    "ai"
+  ],
+  "author": "PromptEval",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "openai": "^6.32.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.37",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
