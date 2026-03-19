@@ -1,3 +1,4 @@
+// test it with npx ts-node test/test.ts
 import {
   PromptEval,
   contains,

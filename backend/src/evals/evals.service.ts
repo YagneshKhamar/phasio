@@ -344,4 +344,238 @@ export class EvalsService {
 
     return run;
   }
+
+  async getAnalytics(userId: string, promptId: string) {
+    const prompt = await this.prisma.prompt.findUnique({
+      where: { id: promptId },
+      include: { project: true },
+    });
+
+    if (!prompt) throw new NotFoundException('Prompt not found');
+    if (prompt.project.userId !== userId)
+      throw new ForbiddenException('Access denied');
+
+    const runs = await this.prisma.evalRun.findMany({
+      where: { promptVersion: { promptId } },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        score: true,
+        passedCases: true,
+        totalCases: true,
+        provider: true,
+        model: true,
+        source: true,
+        createdAt: true,
+        promptVersion: { select: { version: true } },
+      },
+    });
+
+    if (runs.length === 0) {
+      return {
+        totalRuns: 0,
+        trend: [],
+        providerBreakdown: [],
+        sourceBreakdown: { web: 0, sdk: 0 },
+        regression: null,
+        avgLatency: null,
+      };
+    }
+
+    const trend = runs.map((r) => ({
+      date: r.createdAt,
+      score: r.score,
+      version: r.promptVersion.version,
+      provider: r.provider,
+      source: r.source,
+    }));
+
+    // Provider breakdown
+    const providerMap: Record<string, { scores: number[]; model: string }> = {};
+    for (const r of runs) {
+      if (!providerMap[r.provider]) {
+        providerMap[r.provider] = { scores: [], model: r.model };
+      }
+      providerMap[r.provider].scores.push(r.score);
+    }
+    const providerBreakdown = Object.entries(providerMap).map(
+      ([provider, data]) => ({
+        provider,
+        model: data.model,
+        avgScore: data.scores.reduce((a, b) => a + b, 0) / data.scores.length,
+        runs: data.scores.length,
+      }),
+    );
+
+    const sourceBreakdown = {
+      web: runs.filter((r) => r.source === 'web').length,
+      sdk: runs.filter((r) => r.source === 'sdk').length,
+    };
+
+    // Regression detection
+    let regression: {
+      lastScore: number;
+      prevScore: number;
+      delta: number;
+      status: string;
+    } | null = null;
+    if (runs.length >= 2) {
+      const last = runs[runs.length - 1];
+      const prev = runs[runs.length - 2];
+      const delta = last.score - prev.score;
+      regression = {
+        lastScore: last.score,
+        prevScore: prev.score,
+        delta: Math.round(delta * 10) / 10,
+        status:
+          delta < -10 ? 'regression' : delta > 10 ? 'improvement' : 'stable',
+      };
+    }
+
+    const latencyData = await this.prisma.evalResult.aggregate({
+      where: { evalRun: { promptVersion: { promptId } } },
+      _avg: { latencyMs: true },
+    });
+
+    return {
+      totalRuns: runs.length,
+      trend,
+      providerBreakdown,
+      sourceBreakdown,
+      regression,
+      avgLatency: latencyData._avg.latencyMs
+        ? Math.round(latencyData._avg.latencyMs)
+        : null,
+    };
+  }
+
+  async getGlobalAnalytics(userId: string) {
+    // All runs across all prompts for this user
+    const runs = await this.prisma.evalRun.findMany({
+      where: { promptVersion: { prompt: { project: { userId } } } },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        score: true,
+        passedCases: true,
+        totalCases: true,
+        provider: true,
+        model: true,
+        source: true,
+        createdAt: true,
+        promptVersion: {
+          select: {
+            version: true,
+            prompt: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (runs.length === 0) {
+      return {
+        totalRuns: 0,
+        avgScore: null,
+        avgLatency: null,
+        sourceBreakdown: { web: 0, sdk: 0 },
+        providerBreakdown: [],
+        trend: [],
+        topPrompts: [],
+        regressingPrompts: [],
+      };
+    }
+
+    const avgScore = runs.reduce((sum, r) => sum + r.score, 0) / runs.length;
+
+    // Provider breakdown
+    const providerMap: Record<string, { scores: number[]; model: string }> = {};
+    for (const r of runs) {
+      if (!providerMap[r.provider]) {
+        providerMap[r.provider] = { scores: [], model: r.model };
+      }
+      providerMap[r.provider].scores.push(r.score);
+    }
+    const providerBreakdown = Object.entries(providerMap).map(
+      ([provider, data]) => ({
+        provider,
+        model: data.model,
+        avgScore: data.scores.reduce((a, b) => a + b, 0) / data.scores.length,
+        runs: data.scores.length,
+      }),
+    );
+
+    // Score trend — last 30 runs
+    const trend = runs.slice(-30).map((r) => ({
+      date: r.createdAt,
+      score: r.score,
+      provider: r.provider,
+      source: r.source,
+      promptName: r.promptVersion.prompt.name,
+    }));
+
+    // Source breakdown
+    const sourceBreakdown = {
+      web: runs.filter((r) => r.source === 'web').length,
+      sdk: runs.filter((r) => r.source === 'sdk').length,
+    };
+
+    // Per-prompt stats
+    const promptMap: Record<string, { name: string; runs: typeof runs }> = {};
+    for (const r of runs) {
+      const pid = r.promptVersion.prompt.id;
+      if (!promptMap[pid]) {
+        promptMap[pid] = { name: r.promptVersion.prompt.name, runs: [] };
+      }
+      promptMap[pid].runs.push(r);
+    }
+
+    // Top prompts by avg score
+    const topPrompts = Object.entries(promptMap)
+      .map(([id, data]) => ({
+        id,
+        name: data.name,
+        totalRuns: data.runs.length,
+        avgScore: data.runs.reduce((s, r) => s + r.score, 0) / data.runs.length,
+        lastRun: data.runs[data.runs.length - 1].createdAt,
+      }))
+      .sort((a, b) => b.avgScore - a.avgScore)
+      .slice(0, 5);
+
+    // Regressing prompts — last run dropped > 10% vs previous
+    const regressingPrompts = Object.entries(promptMap)
+      .filter(([, data]) => data.runs.length >= 2)
+      .map(([id, data]) => {
+        const last = data.runs[data.runs.length - 1];
+        const prev = data.runs[data.runs.length - 2];
+        const delta = last.score - prev.score;
+        return { id, name: data.name, delta, lastScore: last.score };
+      })
+      .filter((p) => p.delta < -10)
+      .sort((a, b) => a.delta - b.delta);
+
+    // Global avg latency
+    const latencyData = await this.prisma.evalResult.aggregate({
+      where: {
+        evalRun: {
+          promptVersion: { prompt: { project: { userId } } },
+        },
+      },
+      _avg: { latencyMs: true },
+    });
+
+    return {
+      totalRuns: runs.length,
+      avgScore: Math.round(avgScore * 10) / 10,
+      avgLatency: latencyData._avg.latencyMs
+        ? Math.round(latencyData._avg.latencyMs)
+        : null,
+      sourceBreakdown,
+      providerBreakdown,
+      trend,
+      topPrompts,
+      regressingPrompts,
+    };
+  }
 }

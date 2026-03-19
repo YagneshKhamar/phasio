@@ -17,6 +17,7 @@ import {
   deleteSuite,
   createTestCase,
   deleteTestCase,
+  getEvalAnalytics,
 } from "@/lib/api-functions";
 import { getErrorMessage } from "@/lib/error";
 
@@ -67,6 +68,12 @@ export default function PromptPage() {
   const { data: prompt, isLoading } = useQuery<Prompt>({
     queryKey: ["prompt", id],
     queryFn: () => getPrompt(id),
+    enabled: !!id,
+  });
+
+  const { data: analytics } = useQuery({
+    queryKey: ["eval-analytics", id],
+    queryFn: () => getEvalAnalytics(id),
     enabled: !!id,
   });
 
@@ -191,18 +198,24 @@ export default function PromptPage() {
       </div>
 
       <Tabs defaultValue="versions">
-        <TabsList className="bg-[#111111] border border-[#222222] mb-6">
+        <TabsList variant="line" className="mb-6 w-full">
           <TabsTrigger
             value="versions"
-            className="font-mono text-xs data-[state=active]:bg-amber-400 data-[state=active]:text-black"
+            className="font-mono text-xs px-4 py-2 data-[state=active]:text-amber-400 data-[state=active]:shadow-none cursor-pointer"
           >
             Versions ({prompt.versions.length})
           </TabsTrigger>
           <TabsTrigger
             value="suites"
-            className="font-mono text-xs data-[state=active]:bg-amber-400 data-[state=active]:text-black"
+            className="font-mono text-xs px-4 py-2 data-[state=active]:text-amber-400 data-[state=active]:shadow-none cursor-pointer"
           >
             Test Suites ({prompt.suites.length})
+          </TabsTrigger>
+          <TabsTrigger
+            value="analytics"
+            className="font-mono text-xs px-4 py-2 data-[state=active]:text-amber-400 data-[state=active]:shadow-none cursor-pointer"
+          >
+            Analytics
           </TabsTrigger>
         </TabsList>
 
@@ -475,6 +488,171 @@ export default function PromptPage() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-4">
+          {!analytics || analytics.totalRuns === 0 ? (
+            <div className="text-center py-16 border border-dashed border-[#222222] rounded">
+              <p className="font-mono text-[#888888]">No eval runs yet</p>
+              <p className="text-sm text-[#555555] mt-1">
+                Run an eval to see analytics
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Regression alert */}
+              {analytics.regression && (
+                <div
+                  className={`p-4 rounded border font-mono text-sm ${
+                    analytics.regression.status === "regression"
+                      ? "border-red-400/30 bg-red-400/5 text-red-400"
+                      : analytics.regression.status === "improvement"
+                        ? "border-green-400/30 bg-green-400/5 text-green-400"
+                        : "border-[#222222] bg-[#0a0a0a] text-[#888888]"
+                  }`}
+                >
+                  {analytics.regression.status === "regression" &&
+                    `⚠ Regression — score dropped ${Math.abs(analytics.regression.delta)}% (${analytics.regression.prevScore.toFixed(0)}% → ${analytics.regression.lastScore.toFixed(0)}%)`}
+                  {analytics.regression.status === "improvement" &&
+                    `✓ Improvement — score up ${analytics.regression.delta}% (${analytics.regression.prevScore.toFixed(0)}% → ${analytics.regression.lastScore.toFixed(0)}%)`}
+                  {analytics.regression.status === "stable" &&
+                    `= Stable — last run ${analytics.regression.lastScore.toFixed(0)}% (${analytics.regression.delta >= 0 ? "+" : ""}${analytics.regression.delta}% vs previous)`}
+                </div>
+              )}
+
+              {/* Stat cards */}
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { label: "Total Runs", value: analytics.totalRuns },
+                  {
+                    label: "Avg Latency",
+                    value: analytics.avgLatency
+                      ? `${analytics.avgLatency}ms`
+                      : "—",
+                  },
+                  { label: "Web Runs", value: analytics.sourceBreakdown.web },
+                  { label: "SDK Runs", value: analytics.sourceBreakdown.sdk },
+                ].map(({ label, value }) => (
+                  <div
+                    key={label}
+                    className="p-4 bg-[#0a0a0a] rounded border border-[#222222]"
+                  >
+                    <p className="text-xs font-mono text-[#555555] uppercase tracking-wider mb-1">
+                      {label}
+                    </p>
+                    <p className="font-mono text-xl font-bold text-[#fafafa]">
+                      {value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Score trend */}
+              {analytics.trend.length > 0 && (
+                <Card className="bg-[#0a0a0a] border-[#222222]">
+                  <CardHeader className="pb-2 pt-4 px-5">
+                    <CardTitle className="font-mono text-xs text-[#555555] uppercase tracking-wider">
+                      Score Trend
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-5 pb-5">
+                    <div className="flex items-end gap-1.5 h-24">
+                      {analytics.trend.map(
+                        (
+                          point: {
+                            date: string;
+                            score: number;
+                            provider: string;
+                            source: string;
+                          },
+                          i: number,
+                        ) => (
+                          <div
+                            key={i}
+                            className="flex-1 flex flex-col items-center group relative"
+                          >
+                            <div
+                              className={`w-full rounded-sm ${point.score >= 80 ? "bg-green-400" : point.score >= 50 ? "bg-amber-400" : "bg-red-400"}`}
+                              style={{
+                                height: `${Math.max(4, (point.score / 100) * 88)}px`,
+                              }}
+                            />
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-10 bg-[#1a1a1a] border border-[#333333] rounded px-2 py-1 text-xs font-mono text-[#fafafa] whitespace-nowrap">
+                              {point.score.toFixed(0)}% · {point.provider} ·{" "}
+                              {point.source}
+                              <br />
+                              {new Date(point.date).toLocaleDateString()}
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                    <div className="flex justify-between mt-2">
+                      <span className="text-xs font-mono text-[#444444]">
+                        {new Date(analytics.trend[0].date).toLocaleDateString()}
+                      </span>
+                      <span className="text-xs font-mono text-[#444444]">
+                        {new Date(
+                          analytics.trend[analytics.trend.length - 1].date,
+                        ).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Provider breakdown */}
+              {analytics.providerBreakdown.length > 0 && (
+                <Card className="bg-[#0a0a0a] border-[#222222]">
+                  <CardHeader className="pb-2 pt-4 px-5">
+                    <CardTitle className="font-mono text-xs text-[#555555] uppercase tracking-wider">
+                      Provider Breakdown
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-5 pb-5 space-y-3">
+                    {analytics.providerBreakdown.map(
+                      (p: {
+                        provider: string;
+                        model: string;
+                        avgScore: number;
+                        runs: number;
+                      }) => (
+                        <div key={p.provider}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono text-[#fafafa]">
+                                {p.provider}
+                              </span>
+                              <span className="text-xs font-mono text-[#555555]">
+                                {p.model}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-mono text-[#555555]">
+                                {p.runs} runs
+                              </span>
+                              <span
+                                className={`font-mono text-sm font-bold ${p.avgScore >= 80 ? "text-green-400" : p.avgScore >= 50 ? "text-amber-400" : "text-red-400"}`}
+                              >
+                                {p.avgScore.toFixed(0)}%
+                              </span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-[#1a1a1a] rounded-full h-1">
+                            <div
+                              className={`h-1 rounded-full ${p.avgScore >= 80 ? "bg-green-400" : p.avgScore >= 50 ? "bg-amber-400" : "bg-red-400"}`}
+                              style={{ width: `${p.avgScore}%` }}
+                            />
+                          </div>
+                        </div>
+                      ),
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </TabsContent>

@@ -60,6 +60,12 @@ export default function DashboardLayout({
             {user?.firstName} {user?.lastName}
           </span>
           <Link
+            href="/analytics"
+            className="text-xs font-mono text-[#888888] hover:text-amber-400 transition-colors border border-[#222222] px-3 py-1.5 rounded"
+          >
+            analytics
+          </Link>
+          <Link
             href="/settings"
             className="text-xs font-mono text-[#888888] hover:text-amber-400 transition-colors border border-[#222222] px-3 py-1.5 rounded"
           >

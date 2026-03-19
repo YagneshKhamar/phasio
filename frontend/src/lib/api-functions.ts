@@ -103,3 +103,9 @@ export const updatePassword = (data: {
   currentPassword: string;
   newPassword: string;
 }) => api.patch("/users/password", data).then((r) => r.data);
+
+export const getEvalAnalytics = (promptId: string) =>
+  api.get(`/evals/analytics/${promptId}`).then((r) => r.data);
+
+export const getGlobalAnalytics = () =>
+  api.get("/evals/analytics/global").then((r) => r.data);

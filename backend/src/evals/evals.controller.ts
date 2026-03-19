@@ -28,10 +28,6 @@ export class EvalsController {
   @Post('run')
   @ApiOperation({ summary: 'Run an eval comparing two prompt versions' })
   @ApiResponse({ status: 201, description: 'Eval completed successfully' })
-  @ApiResponse({ status: 400, description: 'Validation failed' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Access denied' })
-  @ApiResponse({ status: 404, description: 'Version or suite not found' })
   runEval(
     @Request() req: { user: { userId: string } },
     @Body() dto: RunEvalDto,
@@ -39,32 +35,22 @@ export class EvalsController {
     return this.evalsService.runEval(req.user.userId, dto);
   }
 
-  @Get('prompt/:promptId')
-  @ApiOperation({ summary: 'Get eval history for a prompt' })
+  @Get('analytics/global')
+  @ApiOperation({ summary: 'Get global analytics across all prompts' })
+  @ApiResponse({ status: 200, description: 'Global analytics returned' })
+  getGlobalAnalytics(@Request() req: { user: { userId: string } }) {
+    return this.evalsService.getGlobalAnalytics(req.user.userId);
+  }
+
+  @Get('analytics/:promptId')
+  @ApiOperation({ summary: 'Get analytics for a specific prompt' })
   @ApiParam({ name: 'promptId', description: 'Prompt ID' })
-  @ApiResponse({ status: 200, description: 'Eval history returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Access denied' })
-  @ApiResponse({ status: 404, description: 'Prompt not found' })
-  getHistory(
+  @ApiResponse({ status: 200, description: 'Analytics returned' })
+  getAnalytics(
     @Request() req: { user: { userId: string } },
     @Param('promptId') promptId: string,
   ) {
-    return this.evalsService.getHistory(req.user.userId, promptId);
-  }
-
-  @Get('run/:runId')
-  @ApiOperation({ summary: 'Get a single eval run with full results' })
-  @ApiParam({ name: 'runId', description: 'Eval Run ID' })
-  @ApiResponse({ status: 200, description: 'Eval run returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Access denied' })
-  @ApiResponse({ status: 404, description: 'Eval run not found' })
-  getRunById(
-    @Request() req: { user: { userId: string } },
-    @Param('runId') runId: string,
-  ) {
-    return this.evalsService.getRunById(req.user.userId, runId);
+    return this.evalsService.getAnalytics(req.user.userId, promptId);
   }
 
   @Get('comparisons/:promptId')
@@ -76,5 +62,27 @@ export class EvalsController {
     @Param('promptId') promptId: string,
   ) {
     return this.evalsService.getComparisons(req.user.userId, promptId);
+  }
+
+  @Get('prompt/:promptId')
+  @ApiOperation({ summary: 'Get eval history for a prompt' })
+  @ApiParam({ name: 'promptId', description: 'Prompt ID' })
+  @ApiResponse({ status: 200, description: 'Eval history returned' })
+  getHistory(
+    @Request() req: { user: { userId: string } },
+    @Param('promptId') promptId: string,
+  ) {
+    return this.evalsService.getHistory(req.user.userId, promptId);
+  }
+
+  @Get('run/:runId')
+  @ApiOperation({ summary: 'Get a single eval run' })
+  @ApiParam({ name: 'runId', description: 'Eval Run ID' })
+  @ApiResponse({ status: 200, description: 'Eval run returned' })
+  getRunById(
+    @Request() req: { user: { userId: string } },
+    @Param('runId') runId: string,
+  ) {
+    return this.evalsService.getRunById(req.user.userId, runId);
   }
 }
