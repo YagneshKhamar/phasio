@@ -53,7 +53,7 @@ export default function DashboardLayout({
           href="/dashboard"
           className="font-mono text-lg font-bold text-amber-400 tracking-tight"
         >
-          PromptEval
+          Phasio
         </Link>
         <div className="flex items-center gap-4">
           <span className="text-[#888888] text-sm font-mono">

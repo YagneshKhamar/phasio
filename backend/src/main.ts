@@ -9,8 +9,8 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
 
   const config = new DocumentBuilder()
-    .setTitle('PromptEval API')
-    .setDescription('API documentation for PromptEval')
+    .setTitle('Phasio API')
+    .setDescription('API documentation for Phasio platform')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

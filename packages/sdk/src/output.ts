@@ -38,7 +38,7 @@ export function printResults(result: CompareResult): void {
   ];
 
   console.log("");
-  console.log(`${BOLD}PromptEval${RESET}`);
+  console.log(`${BOLD}Phasio${RESET}`);
   console.log(`${DIM}${"─".repeat(60)}${RESET}`);
   console.log(
     `${DIM}${providers.length} provider(s) · ${allVersionLabels.length} version(s) · ${providers[0]?.versions[0]?.totalCases ?? 0} tests${RESET}`,
@@ -131,5 +131,5 @@ function printProviderResult(
 }
 
 export function printError(message: string): void {
-  console.error(`${RED}${BOLD}PromptEval error:${RESET} ${message}`);
+  console.error(`${RED}${BOLD}Phasio error:${RESET} ${message}`);
 }

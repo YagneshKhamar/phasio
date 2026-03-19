@@ -8,7 +8,7 @@ export default function AuthLayout({
       <div className="w-full max-w-md px-4">
         <div className="mb-8 text-center">
           <h1 className="font-mono text-2xl font-bold text-amber-400 tracking-tight">
-            PromptEval
+            Phasio
           </h1>
           <p className="text-sm text-[#888888] mt-1">
             Prompt testing and LLM regression

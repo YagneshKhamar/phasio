@@ -31,7 +31,7 @@ export interface RunOptions {
   versions: PromptVersion[];
   tests: TestCase[];
   concurrency?: number; // default: 5
-  telemetry?: boolean; // default: false — opt-in to send analytics to PromptEval
+  telemetry?: boolean; // default: false — opt-in to send analytics to Phasio
 }
 
 export interface CaseResult {
@@ -71,8 +71,8 @@ export interface CompareResult {
   };
 }
 
-export interface PromptEvalConfig {
-  apiKey: string; // your PromptEval platform key (pe-xxx)
+export interface PhasioConfig {
+  apiKey: string; // your Phasio platform key (pe-xxx)
   providers: ProviderConfig | ProviderConfig[]; // one or many
-  baseUrl?: string; // override for self-hosted, default: https://api.prompteval.dev
+  baseUrl?: string; // override for self-hosted, default: https://api.phasio.in
 }

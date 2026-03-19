@@ -8,7 +8,7 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className="border-b border-[#222222] px-6 py-4 flex items-center justify-between">
         <span className="font-mono text-lg font-bold text-amber-400">
-          PromptEval
+          Phasio
         </span>
         <div className="flex items-center gap-3">
           <Link
@@ -39,8 +39,8 @@ export default function LandingPage() {
         </h1>
 
         <p className="text-[#888888] text-lg max-w-xl mb-10 leading-relaxed">
-          PromptEval lets you version your prompts, define test cases, and run
-          evals to catch regressions before they reach your users.
+          Phasio lets you version your prompts, define test cases, and run evals
+          to catch regressions before they reach your users.
         </p>
 
         <div className="flex items-center gap-4">
@@ -147,7 +147,7 @@ export default function LandingPage() {
                 step: "03",
                 title: "Run an eval",
                 description:
-                  "Select two versions and a test suite. PromptEval runs both against every test case and returns a diff report.",
+                  "Select two versions and a test suite. Phasio runs both against every test case and returns a diff report.",
               },
               {
                 step: "04",
@@ -195,7 +195,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-[#222222] px-6 py-6 flex items-center justify-between">
         <span className="font-mono text-sm font-bold text-amber-400">
-          PromptEval
+          Phasio
         </span>
         <span className="text-xs font-mono text-[#555555]">
           Built for developers who ship LLM features

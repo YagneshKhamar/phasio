@@ -1,5 +1,5 @@
 import type {
-  PromptEvalConfig,
+  PhasioConfig,
   ProviderConfig,
   RunOptions,
   CompareResult,
@@ -9,20 +9,14 @@ import { runForProvider } from "./runner";
 import { printResults, printError } from "./output";
 import { validateApiKey } from "./auth";
 
-const DEFAULT_BASE_URL =
-  process.env.PROMPTEVAL_BASE_URL ?? "https://api.prompteval.dev"; // update to prod URL on deployment
+const DEFAULT_BASE_URL = process.env.PHASIO_BASE_URL ?? "https://api.phasio.in";
 
-export class PromptEval {
-  private readonly config: PromptEvalConfig;
+export class Phasio {
+  private readonly config: PhasioConfig;
   private readonly providers: ProviderConfig[];
 
-  constructor(config: PromptEvalConfig) {
-    console.log("Initializing PromptEval client...");
-    console.log({ "Configured providers:": config });
-    console.log(
-      "process.env.PROMPTEVAL_BASE_URL",
-      process.env.PROMPTEVAL_BASE_URL,
-    );
+  constructor(config: PhasioConfig) {
+    console.log("Initializing Phasio client...");
     console.log(`Using API base URL: ${config.baseUrl ?? DEFAULT_BASE_URL}`);
     this.config = config;
     this.providers = Array.isArray(config.providers)

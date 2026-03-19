@@ -1,10 +1,10 @@
 {
-  "name": "prompteval-backend",
+  "name": "phasio-backend",
   "version": "0.0.1",
-  "description": "This is the backend for PromptEval, a platform for evaluating and comparing the performance of different language models on various tasks.",
+  "description": "This is the backend for Phasio, a platform for evaluating and comparing the performance of different language models on various tasks.",
   "author": "Yagnesh Khamar <AppUnik>",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

@@ -1,5 +1,5 @@
 {
-  "name": "prompteval",
+  "name": "phasio",
   "version": "0.1.0",
   "description": "Test and evaluate LLM prompts before production. A/B compare prompt versions with rule-based and LLM-as-a-judge checks.",
   "main": "dist/index.js",
@@ -21,7 +21,7 @@
     "anthropic",
     "ai"
   ],
-  "author": "PromptEval",
+  "author": "AppUnik",
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

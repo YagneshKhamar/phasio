@@ -30,7 +30,7 @@ export class ApiKeysController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Generate a new PromptEval API key' })
+  @ApiOperation({ summary: 'Generate a new Phasio API key' })
   @ApiResponse({ status: 201, description: 'Key generated — shown once only' })
   create(
     @Request() req: { user: { userId: string } },

@@ -1,12 +1,12 @@
 // Main class
-export { PromptEval } from "./client";
+export { Phasio } from "./client";
 
 // Validator helpers
 export { contains, notContains, matches, llmJudge } from "./validators";
 
 // Types — everything a developer needs
 export type {
-  PromptEvalConfig,
+  PhasioConfig,
   ProviderConfig,
   Provider,
   RunOptions,

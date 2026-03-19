@@ -1,14 +1,8 @@
 // test it with npx ts-node test/test.ts
-import {
-  PromptEval,
-  contains,
-  notContains,
-  matches,
-  llmJudge,
-} from 'prompteval';
+import { Phasio, contains, notContains, matches, llmJudge } from 'phasio';
 
 async function main() {
-  const pe = new PromptEval({
+  const pe = new Phasio({
     baseUrl: 'http://localhost:2000',
     apiKey:
       'pe-52fe27e381afca63d053db12e02a68b24996502d12d5064b618fb0abccd15dc7', // generate one from your settings page
@@ -46,6 +40,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Error running PromptEval:', err);
+  console.error('Error running Phasio:', err);
   process.exit(1);
 });

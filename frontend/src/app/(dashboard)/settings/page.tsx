@@ -363,17 +363,17 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* PromptEval API Keys */}
+      {/* Phasio API Keys */}
       <Card className="bg-[#111111] border-[#222222] mb-6">
         <CardHeader className="pb-4">
           <CardTitle className="font-mono text-sm text-[#888888] uppercase tracking-wider">
-            PromptEval API Keys
+            Phasio API Keys
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-xs font-mono text-[#555555]">
-            Use these keys to authenticate the PromptEval npm package in your
-            CI/CD or local scripts.
+            Use these keys to authenticate the Phasio npm package in your CI/CD
+            or local scripts.
           </p>
 
           {/* Generated key — shown once */}

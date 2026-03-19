@@ -1,26 +1,20 @@
-# prompteval
+# Phasio
 
 Test and evaluate LLM prompts before production. A/B compare prompt versions across OpenAI and Anthropic with rule-based and LLM-as-a-judge checks.
 
 ## Install
 
 ```bash
-npm install prompteval
+npm install phasio
 ```
 
 ## Quick Start
 
 ```typescript
-import {
-  PromptEval,
-  contains,
-  notContains,
-  matches,
-  llmJudge,
-} from "prompteval";
+import { Phasio, contains, notContains, matches, llmJudge } from "phasio";
 
-const pe = new PromptEval({
-  apiKey: "pe-xxxx", // from prompteval.dev dashboard
+const pe = new Phasio({
+  apiKey: "pe-xxxx", // from phasio.in dashboard
   providers: {
     provider: "openai",
     llmKey: "sk-...",
@@ -74,7 +68,7 @@ console.log(result.summary.bestVersion); // "v1"
 Run the same suite against OpenAI and Anthropic simultaneously:
 
 ```typescript
-const pe = new PromptEval({
+const pe = new Phasio({
   apiKey: "pe-xxxx",
   providers: [
     { provider: "openai", llmKey: "sk-...", model: "gpt-4o-mini" },
@@ -95,7 +89,7 @@ console.log(result.summary.bestVersion); // "v2"
 ## Terminal Output
 
 ```
-PromptEval
+Phasio
 ────────────────────────────────────────────────────────────
 2 provider(s) · 2 version(s) · 4 tests
 
@@ -148,10 +142,10 @@ pe.compare({
 
 ## Get an API Key
 
-Sign up at [prompteval.dev](https://prompteval.dev) and generate a key from Settings → API Keys.
+Sign up at [Phasio.in](https://phasio.in) and generate a key from Settings → API Keys.
 
 ## Configuration
 
-| Environment Variable  | Default                      | Description                                                                 |
-| --------------------- | ---------------------------- | --------------------------------------------------------------------------- |
-| `PROMPTEVAL_BASE_URL` | `https://api.prompteval.dev` | Override the PromptEval API base URL (useful for self-hosting or local dev) |
+| Environment Variable | Default                 | Description                                                             |
+| -------------------- | ----------------------- | ----------------------------------------------------------------------- |
+| `PHASIO_BASE_URL`    | `https://api.phasio.in` | Override the Phasio API base URL (useful for self-hosting or local dev) |

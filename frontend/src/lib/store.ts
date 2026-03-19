@@ -34,7 +34,7 @@ export const useAuthStore = create<AuthStore>()(
       },
     }),
     {
-      name: "prompteval-auth",
+      name: "phasio-auth",
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },

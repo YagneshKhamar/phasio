@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PromptEval",
+  title: "Phasio",
   description: "Prompt testing and LLM regression SaaS",
 };
 

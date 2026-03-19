@@ -5,7 +5,7 @@ export async function validateApiKey(
   apiKey: string,
   baseUrl: string,
 ): Promise<void> {
-  console.log("Validating PromptEval API key...");
+  console.log("Validating Phasio API key...");
   console.log("base url", baseUrl);
   const url = new URL("/api-keys/validate", baseUrl);
   const body = JSON.stringify({ key: apiKey });
@@ -35,7 +35,7 @@ export async function validateApiKey(
           } else if (res.statusCode === 401) {
             reject(
               new Error(
-                "Invalid or revoked PromptEval API key. Get one at https://prompteval.dev",
+                "Invalid or revoked Phasio API key. Get one at https://phasio.in",
               ),
             );
           } else {
@@ -52,7 +52,7 @@ export async function validateApiKey(
     req.on("error", (err: Error) => {
       // If auth server is unreachable, warn but don't block
       console.warn(
-        `\x1b[33mWarning: Could not reach PromptEval auth server (${err.message}). Running in offline mode.\x1b[0m`,
+        `\x1b[33mWarning: Could not reach Phasio auth server (${err.message}). Running in offline mode.\x1b[0m`,
       );
       resolve();
     });
