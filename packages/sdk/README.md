@@ -1,20 +1,21 @@
-# Phasio
+# @phasio/sdk
 
 Test and evaluate LLM prompts before production. A/B compare prompt versions across OpenAI and Anthropic with rule-based and LLM-as-a-judge checks.
 
 ## Install
 
 ```bash
-npm install phasio
+npm install @phasio/sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { Phasio, contains, notContains, matches, llmJudge } from "phasio";
+import { Phasio, contains, notContains, matches, llmJudge } from "@phasio/sdk";
 
 const pe = new Phasio({
-  apiKey: "pe-xxxx", // from phasio.in dashboard
+  apiKey: "pe-xxxx", // from phasio.in dashboard → Settings → API Keys
+  telemetry: true, // opt-in to sync analytics to your phasio.in dashboard
   providers: {
     provider: "openai",
     llmKey: "sk-...",
@@ -70,6 +71,7 @@ Run the same suite against OpenAI and Anthropic simultaneously:
 ```typescript
 const pe = new Phasio({
   apiKey: "pe-xxxx",
+  telemetry: true,
   providers: [
     { provider: "openai", llmKey: "sk-...", model: "gpt-4o-mini" },
     {
@@ -106,12 +108,6 @@ latency  801ms avg      778ms avg
 
 = Tie on accuracy — v2 faster (778ms avg)
 
-anthropic (claude-haiku-4-5-20251001)
-────────────────────────────────────────────────────────────
-         v1             v2
-case 1   ✓ 1.1s         ✓ 980ms
-...
-
 Summary
 ────────────────────────────────────────────────────────────
   Best provider : openai
@@ -129,23 +125,29 @@ Summary
 | String shorthand     | `'contains:Paris'`                         |
 | Custom function      | `(output) => output.length < 100`          |
 
-## Options
+## Configuration
 
 ```typescript
-pe.compare({
-  versions: [...],
-  tests: [...],
-  concurrency: 5,      // max parallel LLM calls per provider (default: 5)
-  telemetry: false,    // opt-in to send anonymised analytics to your dashboard (default: false)
+const pe = new Phasio({
+  apiKey: 'pe-xxxx',       // required — from phasio.in Settings → API Keys
+  providers: [...],        // required — one or array of providers
+  telemetry: false,        // optional — send anonymised analytics to phasio.in dashboard (default: false)
+  baseUrl: 'https://...',  // optional — override API base URL (useful for local dev)
 });
 ```
 
+```typescript
+pe.compare({
+  versions: [...],     // required — prompt versions to compare
+  tests: [...],        // required — test cases
+  concurrency: 5,      // optional — max parallel LLM calls per provider (default: 5)
+});
+```
+
+| Environment Variable | Default                 | Description                      |
+| -------------------- | ----------------------- | -------------------------------- |
+| `PHASIO_BASE_URL`    | `https://api.phasio.in` | Override the Phasio API base URL |
+
 ## Get an API Key
 
-Sign up at [Phasio.in](https://phasio.in) and generate a key from Settings → API Keys.
-
-## Configuration
-
-| Environment Variable | Default                 | Description                                                             |
-| -------------------- | ----------------------- | ----------------------------------------------------------------------- |
-| `PHASIO_BASE_URL`    | `https://api.phasio.in` | Override the Phasio API base URL (useful for self-hosting or local dev) |
+Sign up at [phasio.in](https://phasio.in) and generate a key from **Settings → API Keys**.
