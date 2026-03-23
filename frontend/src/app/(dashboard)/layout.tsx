@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store";
+import Image from "next/image";
 
 export default function DashboardLayout({
   children,
@@ -49,11 +50,17 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <nav className="border-b border-[#222222] bg-[#111111] px-6 py-3 flex items-center justify-between">
-        <Link
-          href="/dashboard"
-          className="font-mono text-lg font-bold text-amber-400 tracking-tight"
-        >
-          Phasio
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <Image
+            src="/logo.png"
+            alt="Phasio"
+            width="100"
+            height="100"
+            className="h-7 w-7 rounded"
+          />
+          <span className="font-mono text-lg font-bold text-amber-400 tracking-tight">
+            Phasio
+          </span>
         </Link>
         <div className="flex items-center gap-4">
           <span className="text-[#888888] text-sm font-mono">

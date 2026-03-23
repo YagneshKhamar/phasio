@@ -143,16 +143,16 @@ export default function DashboardPage() {
                     {new Date(project.createdAt).toLocaleDateString()}
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => router.push(`/projects/${project.id}`)}
-                    className="text-xs font-mono text-[#888888] hover:text-amber-400 transition-colors"
+                    className="text-xs font-mono px-3 py-1.5 rounded border border-[#333333] text-[#cccccc] hover:border-amber-400 hover:text-amber-400 transition-colors"
                   >
                     open →
                   </button>
                   <button
                     onClick={() => deleteMutation.mutate(project.id)}
-                    className="text-xs font-mono text-[#555555] hover:text-red-400 transition-colors"
+                    className="text-xs font-mono px-3 py-1.5 rounded border border-[#333333] text-[#888888] hover:border-red-400 hover:text-red-400 transition-colors"
                   >
                     delete
                   </button>

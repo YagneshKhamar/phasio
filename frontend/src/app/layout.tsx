@@ -16,7 +16,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Phasio",
-  description: "Prompt testing and LLM regression SaaS",
+  description: "Prompt testing and LLM regression",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
