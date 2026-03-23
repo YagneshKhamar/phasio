@@ -1,15 +1,16 @@
+import Anthropic from '@anthropic-ai/sdk';
 import {
+  BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
-  BadRequestException,
 } from '@nestjs/common';
+import OpenAI from 'openai';
 import { PrismaService } from '../prisma/prisma.service';
 import { RunEvalDto } from './dto/run-eval.dto';
-import { runRuleBasedCheck } from './runners/rule-based.runner';
+import { TelemetryDto } from './dto/telemetry.dto';
 import { runLlmJudge } from './runners/llm-judge.runner';
-import OpenAI from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
+import { runRuleBasedCheck } from './runners/rule-based.runner';
 
 type EvalResult = {
   testCaseId: string;
@@ -577,5 +578,79 @@ export class EvalsService {
       topPrompts,
       regressingPrompts,
     };
+  }
+
+  async receiveTelemetry(dto: TelemetryDto) {
+    // Validate the API key and get the userId
+    const keyHash = require('crypto')
+      .createHash('sha256')
+      .update(dto.apiKey)
+      .digest('hex');
+
+    const apiKey = await this.prisma.apiKey.findUnique({
+      where: { keyHash },
+      include: { user: true },
+    });
+
+    if (!apiKey || !apiKey.isActive) return { received: false };
+
+    const userId = apiKey.userId;
+
+    // Update key usage
+    await this.prisma.apiKey.update({
+      where: { id: apiKey.id },
+      data: { usageCount: { increment: 1 }, lastUsedAt: new Date() },
+    });
+
+    // Find the user's most recently active prompt to associate with
+    // or use promptId if provided
+    let promptVersionId: string | null = null;
+
+    if (dto.promptId) {
+      const version = await this.prisma.promptVersion.findFirst({
+        where: { prompt: { id: dto.promptId, project: { userId } } },
+        orderBy: { version: 'desc' },
+      });
+      promptVersionId = version?.id ?? null;
+    }
+
+    if (!promptVersionId) {
+      const version = await this.prisma.promptVersion.findFirst({
+        where: { prompt: { project: { userId } } },
+        orderBy: { createdAt: 'desc' },
+      });
+      promptVersionId = version?.id ?? null;
+    }
+
+    if (!promptVersionId) return { received: true, stored: false };
+
+    // Get the suite associated with the version
+    const suiteId = await this.prisma.evalRun.findFirst({
+      where: { promptVersionId },
+      select: { suiteId: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!suiteId) return { received: true, stored: false };
+
+    // Store one EvalRun per provider per version
+    for (const provider of dto.providers) {
+      for (const version of provider.versions) {
+        await this.prisma.evalRun.create({
+          data: {
+            promptVersionId,
+            suiteId: suiteId.suiteId,
+            score: version.score,
+            totalCases: version.totalCases,
+            passedCases: version.passedCases,
+            provider: provider.provider,
+            model: provider.model,
+            source: 'sdk',
+          },
+        });
+      }
+    }
+
+    return { received: true, stored: true };
   }
 }

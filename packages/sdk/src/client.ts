@@ -8,6 +8,7 @@ import type {
 import { runForProvider } from "./runner";
 import { printResults, printError } from "./output";
 import { validateApiKey } from "./auth";
+import { version } from "../package.json";
 
 const DEFAULT_BASE_URL = process.env.PHASIO_BASE_URL ?? "https://api.phasio.in";
 
@@ -16,8 +17,6 @@ export class Phasio {
   private readonly providers: ProviderConfig[];
 
   constructor(config: PhasioConfig) {
-    console.log("Initializing Phasio client...");
-    console.log(`Using API base URL: ${config.baseUrl ?? DEFAULT_BASE_URL}`);
     this.config = config;
     this.providers = Array.isArray(config.providers)
       ? config.providers
@@ -36,7 +35,8 @@ export class Phasio {
   }
 
   async compare(options: RunOptions): Promise<CompareResult> {
-    const { versions, tests, concurrency = 5, telemetry = false } = options;
+    const { versions, tests, concurrency = 5 } = options;
+    const telemetry = this.config.telemetry ?? false;
 
     if (versions.length < 1)
       throw new Error("At least one version is required");
@@ -118,7 +118,7 @@ export class Phasio {
           winner: p.winner,
         })),
         summary: result.summary,
-        sdkVersion: "0.1.0",
+        sdkVersion: version,
         source: "sdk",
       };
 
