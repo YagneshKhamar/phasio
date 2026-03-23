@@ -1,4 +1,4 @@
-# PromptEval
+# Phasio
 
 A SaaS developer tool for testing and evaluating LLM prompts before production.
 Version your prompts, define test cases, run A/B comparisons, and catch regressions automatically.
@@ -25,7 +25,7 @@ Version your prompts, define test cases, run A/B comparisons, and catch regressi
 
 **Core loop:** Create a project → add a prompt → create versions → define test suites → run A/B evals → view results and history.
 
-**What PromptEval does:**
+**What Phasio does:**
 
 - Lets you version your LLM prompts and track changes over time
 - Runs both versions in parallel against the same test suite
@@ -49,7 +49,7 @@ Version your prompts, define test cases, run A/B comparisons, and catch regressi
 ## Project Structure
 
 ```
-prompteval/
+phasio/
 ├── backend/
 │   ├── prisma/
 │   │   ├── schema.prisma               # Full data model
@@ -258,7 +258,7 @@ Frontend runs on `http://localhost:3000`
 ### Backend (`backend/.env`)
 
 ```env
-DATABASE_URL="mysql://root:yourpassword@localhost:3306/prompteval"
+DATABASE_URL="mysql://root:yourpassword@localhost:3306/phasio"
 PORT=2000
 JWT_SECRET=your_jwt_secret_here
 ```
