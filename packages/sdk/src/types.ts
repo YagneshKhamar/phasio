@@ -41,6 +41,7 @@ export interface CaseResult {
   latencyMs: number;
   score?: number;
   reason?: string;
+  expectDescription?: string; // human readable description of the check
 }
 
 export interface VersionResult {
@@ -62,17 +63,28 @@ export interface ProviderRunResult {
   fastest: string; // version label by avg latency
 }
 
+export interface ReportStatus {
+  passed: boolean;
+  reason: string; // e.g. "all cases passed" | "score 62.5% below threshold 80%"
+}
+
 export interface CompareResult {
   providers: ProviderRunResult[];
   summary: {
-    bestProvider: string; // provider with highest winning score
-    bestVersion: string; // version label that won most across providers
+    bestProvider: string;
+    bestVersion: string;
+    overallScore: number; // avg score across all versions and providers
+    report: ReportStatus; // pass/fail with reason
   };
 }
 
 export interface PhasioConfig {
-  apiKey: string; // your Phasio platform key (pe-xxx)
-  providers: ProviderConfig | ProviderConfig[]; // one or many
-  baseUrl?: string; // override for self-hosted, default: https://api.phasio.in
-  telemetry?: boolean; // opt-in to send anonymised analytics to your dashboard (default: false)
+  apiKey: string;
+  providers: ProviderConfig | ProviderConfig[];
+  baseUrl?: string;
+  telemetry?: boolean;
+  // Threshold config — global, applies to all compare() calls
+  failOnThreshold?: number; // fail if avg score < this % (e.g. 80)
+  failOnAnyCase?: boolean; // fail if any single case fails (default: false)
+  exitOnFail?: boolean; // call process.exit(1) on failure (default: true in CI)
 }

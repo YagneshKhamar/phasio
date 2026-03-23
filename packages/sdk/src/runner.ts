@@ -52,14 +52,17 @@ async function runVersion(
     let passed = false;
     let score: number | undefined;
     let reason: string | undefined;
+    let expectDescription: string | undefined;
 
     if (resolved.kind === "llm_judge") {
       const judgeResult = await callLlmJudge(output, resolved.criteria, config);
       passed = judgeResult.passed;
       score = judgeResult.score;
       reason = judgeResult.reason;
+      expectDescription = `llm_judge: ${resolved.criteria}`;
     } else {
       passed = await Promise.resolve(resolved.fn(output));
+      expectDescription = resolved.desc;
     }
 
     return {
@@ -70,6 +73,7 @@ async function runVersion(
       latencyMs,
       score,
       reason,
+      expectDescription,
     };
   });
 
@@ -102,12 +106,11 @@ export async function runForProvider(
   config: ProviderConfig,
   concurrency: number,
 ): Promise<ProviderRunResult> {
-  // Run all versions in parallel per provider
   const versionResults = await Promise.all(
     versions.map((v) => runVersion(v, tests, config, concurrency)),
   );
 
-  // Determine winner by score, tiebreak by latency
+  // Winner by score, tiebreak by latency
   const sorted = [...versionResults].sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     return a.avgLatencyMs - b.avgLatencyMs;

@@ -18,4 +18,5 @@ export type {
   ProviderRunResult,
   VersionResult,
   CaseResult,
+  ReportStatus,
 } from "./types";

@@ -3,6 +3,7 @@ import type {
   ProviderRunResult,
   VersionResult,
   CaseResult,
+  ReportStatus,
 } from "./types";
 
 const RESET = "\x1b[0m";
@@ -19,16 +20,16 @@ function scoreColor(score: number): string {
   return RED;
 }
 
-function passIcon(passed: boolean): string {
-  return passed ? `${GREEN}✓${RESET}` : `${RED}✗${RESET}`;
-}
-
 function pad(str: string, len: number): string {
   return str.padEnd(len, " ").slice(0, len);
 }
 
 function formatMs(ms: number): string {
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
+}
+
+function separator(char = "─", len = 60): string {
+  return `${DIM}${char.repeat(len)}${RESET}`;
 }
 
 export function printResults(result: CompareResult): void {
@@ -38,57 +39,78 @@ export function printResults(result: CompareResult): void {
   ];
 
   console.log("");
-  console.log(`${BOLD}Phasio${RESET}`);
-  console.log(`${DIM}${"─".repeat(60)}${RESET}`);
+  console.log(`${BOLD}Phasio${RESET} ${DIM}— eval run${RESET}`);
+  console.log(separator());
   console.log(
     `${DIM}${providers.length} provider(s) · ${allVersionLabels.length} version(s) · ${providers[0]?.versions[0]?.totalCases ?? 0} tests${RESET}`,
   );
   console.log("");
 
   for (const providerResult of providers) {
-    printProviderResult(providerResult, allVersionLabels);
+    printProviderResult(providerResult);
   }
 
   // Cross-provider summary (only if multiple providers)
   if (providers.length > 1) {
     console.log(`${BOLD}Summary${RESET}`);
-    console.log(`${DIM}${"─".repeat(60)}${RESET}`);
+    console.log(separator());
     console.log(
       `  Best provider : ${CYAN}${result.summary.bestProvider}${RESET}`,
     );
     console.log(
       `  Best version  : ${CYAN}${result.summary.bestVersion}${RESET}`,
     );
+    console.log(
+      `  Overall score : ${scoreColor(result.summary.overallScore)}${result.summary.overallScore.toFixed(1)}%${RESET}`,
+    );
     console.log("");
   }
+
+  // Final PASS / FAIL banner
+  printReport(result.summary.report);
 }
 
-function printProviderResult(
-  result: ProviderRunResult,
-  _allVersionLabels: string[],
-): void {
+function printProviderResult(result: ProviderRunResult): void {
   console.log(
     `${BOLD}${result.provider}${RESET} ${DIM}(${result.model})${RESET}`,
   );
-  console.log(`${DIM}${"─".repeat(60)}${RESET}`);
+  console.log(separator());
 
   const totalCases = result.versions[0]?.totalCases ?? 0;
-  const COL = 16; // column width
+  const COL = 16;
 
   // Header row
   const header = result.versions.map((v) => pad(v.label, COL)).join("");
   console.log(`  ${pad("", 8)}${header}`);
 
-  // Case by case rows
+  // Per-case rows with reason on fail
   for (let i = 0; i < totalCases; i++) {
-    const caseLabel = result.versions[0]?.results[i]?.label ?? `case ${i + 1}`;
+    const firstResult = result.versions[0]?.results[i];
+    const caseLabel = firstResult?.label ?? `case ${i + 1}`;
+
     const cells = result.versions.map((v) => {
       const r: CaseResult = v.results[i];
       if (!r) return pad("", COL);
       const icon = r.passed ? `${GREEN}✓${RESET}` : `${RED}✗${RESET}`;
-      return pad(`${icon} ${formatMs(r.latencyMs)}`, COL + 9); // +9 for ANSI escape chars
+      return pad(`${icon} ${formatMs(r.latencyMs)}`, COL + 9);
     });
     console.log(`  ${pad(caseLabel, 8)}${cells.join("")}`);
+
+    // Show fail reason inline for each version
+    for (const v of result.versions) {
+      const r: CaseResult = v.results[i];
+      if (r && !r.passed) {
+        let reason = "";
+        if (r.expectDescription) {
+          reason = `expected: ${r.expectDescription}`;
+        } else if (r.score !== undefined && r.reason) {
+          reason = `llm_judge: ${r.score}/10 — ${r.reason}`;
+        }
+        if (reason) {
+          console.log(`  ${DIM}  ${v.label}: ${reason}${RESET}`);
+        }
+      }
+    }
   }
 
   console.log("");
@@ -127,6 +149,19 @@ function printProviderResult(
     );
   }
 
+  console.log("");
+}
+
+function printReport(report: ReportStatus): void {
+  console.log(separator("─"));
+  if (report.passed) {
+    console.log(
+      `${GREEN}${BOLD}  PASS${RESET}  ${DIM}${report.reason}${RESET}`,
+    );
+  } else {
+    console.log(`${RED}${BOLD}  FAIL${RESET}  ${DIM}${report.reason}${RESET}`);
+  }
+  console.log(separator("─"));
   console.log("");
 }
 
