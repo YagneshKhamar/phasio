@@ -1,5 +1,5 @@
 {
-  "name": "phasio",
+  "name": "@phasio/sdk",
   "version": "0.1.0",
   "description": "Test and evaluate LLM prompts before production. A/B compare prompt versions with rule-based and LLM-as-a-judge checks.",
   "main": "dist/index.js",

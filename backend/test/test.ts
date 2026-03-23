@@ -1,11 +1,10 @@
 // test it with npx ts-node test/test.ts
-import { Phasio, contains, notContains, matches, llmJudge } from 'phasio';
+import { Phasio, contains, notContains, matches, llmJudge } from '@phasio/sdk';
 
 async function main() {
   const pe = new Phasio({
-    baseUrl: 'http://localhost:2000',
     apiKey:
-      'pe-52fe27e381afca63d053db12e02a68b24996502d12d5064b618fb0abccd15dc7', // generate one from your settings page
+      'pe-03217b77632fac7752efe19e325f60d99752aa590ab4297e66f75db64e574d4a', // generate one from your settings page
     providers: [
       {
         provider: 'openai',
