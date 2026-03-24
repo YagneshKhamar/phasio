@@ -219,7 +219,6 @@ If `judgeProviders` is not set, the run providers are used as judges.
 | `failOnThreshold` | `number`                             | none                      | Fail if avg score % drops below this value         |
 | `failOnAnyCase`   | `boolean`                            | `false`                   | Fail if any single test case fails                 |
 | `exitOnFail`      | `boolean`                            | `true`                    | `process.exit(1)` on failure                       |
-| `baseUrl`         | `string`                             | `https://api.phasio.in`   | Override API base URL                              |
 
 ### `ProviderConfig`
 
