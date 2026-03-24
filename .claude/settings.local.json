@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /d/Project/phasio -type f -name README* -o -name package.json -o -name requirements.txt -o -name pyproject.toml -o -name .env* -o -name tsconfig.json -o -name next.config.js)"
+    ]
+  }
+}
