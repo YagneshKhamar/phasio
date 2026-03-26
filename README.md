@@ -4,7 +4,7 @@ Test your LLM prompts before they break production.
 
 Phasio lets you version prompts, define test cases, and run A/B evals across OpenAI and Anthropic. Catch regressions before they reach your users — via dashboard or `npm install @phasio/sdk`.
 
-→ **[phasio.in](https://phasio.in)**
+→ **[phasio.dev](https://phasio.dev)**
 
 ---
 
@@ -119,7 +119,7 @@ describe('My suite', () => {
 | `failOnAnyCase`   | `boolean`                            | `false`                 | Fail if any single test case fails |
 | `exitOnFail`      | `boolean`                            | `true`                  | process.exit(1) on failure         |
 
-Full documentation: **[phasio.in](https://phasio.in)**
+Full documentation: **[phasio.dev](https://phasio.dev)**
 
 ---
 

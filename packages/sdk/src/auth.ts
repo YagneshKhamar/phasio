@@ -33,7 +33,7 @@ export async function validateApiKey(
           } else if (res.statusCode === 401) {
             reject(
               new Error(
-                "Invalid or revoked Phasio API key. Get one at phasio.in",
+                "Invalid or revoked Phasio API key. Get one at phasio.dev",
               ),
             );
           } else {
