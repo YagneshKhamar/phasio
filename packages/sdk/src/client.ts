@@ -35,7 +35,8 @@ import type {
   TestResult,
 } from "./types";
 
-const DEFAULT_BASE_URL = process.env.PHASIO_BASE_URL ?? "https://api.phasio.in";
+const DEFAULT_BASE_URL =
+  process.env.PHASIO_BASE_URL ?? "https://api.phasio.dev";
 
 interface TestFn {
   (name: string, definition: Omit<TestDefinition, "name">): void;
