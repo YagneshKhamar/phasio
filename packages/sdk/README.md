@@ -17,8 +17,8 @@ npm install -D ts-node typescript   # required peer deps
 import { defineConfig } from "@phasio/sdk";
 
 export default defineConfig({
-  apiKey: process.env.PHASIO_API_KEY, // from phasio.in → Settings → API Keys
-  telemetry: true, // sync results to your phasio.in dashboard
+  apiKey: process.env.PHASIO_API_KEY, // from phasio.dev → Settings → API Keys
+  telemetry: true, // sync results to your phasio.dev dashboard
   failOnThreshold: 80, // fail if avg score drops below 80%
   exitOnFail: true, // exit(1) on failure — CI fails automatically
   providers: [
@@ -211,11 +211,11 @@ If `judgeProviders` is not set, the run providers are used as judges.
 
 | Option            | Type                                 | Default                   | Description                                        |
 | ----------------- | ------------------------------------ | ------------------------- | -------------------------------------------------- |
-| `apiKey`          | `string`                             | required                  | Your Phasio API key from phasio.in                 |
+| `apiKey`          | `string`                             | required                  | Your Phasio API key from phasio.dev                |
 | `providers`       | `ProviderConfig \| ProviderConfig[]` | required                  | One or more LLM providers to run prompts           |
 | `judgeProviders`  | `ProviderConfig \| ProviderConfig[]` | falls back to `providers` | Provider(s) used for `llmJudge()` scoring          |
 | `versions`        | `PromptVersion[]`                    | required                  | Prompt versions to test — must include `{{input}}` |
-| `telemetry`       | `boolean`                            | `false`                   | Send results to your phasio.in dashboard           |
+| `telemetry`       | `boolean`                            | `false`                   | Send results to your phasio.dev dashboard          |
 | `failOnThreshold` | `number`                             | none                      | Fail if avg score % drops below this value         |
 | `failOnAnyCase`   | `boolean`                            | `false`                   | Fail if any single test case fails                 |
 | `exitOnFail`      | `boolean`                            | `true`                    | `process.exit(1)` on failure                       |
@@ -249,9 +249,9 @@ You can also set the default test directory in `package.json`:
 
 ### Environment Variables
 
-| Variable          | Default                 | Description           |
-| ----------------- | ----------------------- | --------------------- |
-| `PHASIO_BASE_URL` | `https://api.phasio.in` | Override API base URL |
+| Variable          | Default                  | Description           |
+| ----------------- | ------------------------ | --------------------- |
+| `PHASIO_BASE_URL` | `https://api.phasio.dev` | Override API base URL |
 
 ---
 
@@ -309,4 +309,4 @@ Capital cities
 
 ## Get an API Key
 
-Sign up at [phasio.in](https://phasio.in) and generate a key from **Settings → API Keys**.
+Sign up at [phasio.dev](https://phasio.dev) and generate a key from **Settings → API Keys**.
