@@ -4,7 +4,7 @@
 
 This policy covers the **`@phasio/sdk`** npm package (`packages/sdk/`).
 
-The Phasio web platform (frontend and backend) is proprietary. Security issues affecting **api.phasio.in** or **phasio.in** should be reported via the same process below but will be handled privately.
+The Phasio web platform (frontend and backend) is proprietary. Security issues affecting **api.phasio.dev** or **phasio.dev** should be reported via the same process below but will be handled privately.
 
 ## Supported Versions
 
