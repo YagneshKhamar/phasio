@@ -57,30 +57,56 @@ export function printTestResult(test: TestResult): void {
 
   console.log(`  ${icon} ${name}${versionParts.join("   ")}   ${duration}`);
 
-  // Show fail reasons indented below each failing case
+  // Show fail reasons + full output on failure
   for (const v of test.versions) {
     for (const r of v.results) {
       if (!r.passed) {
+        const label = multiProvider ? `${v.provider}/${v.label}` : v.label;
+
+        // Reason line
         let reason = "";
         if (r.score !== undefined && r.reason) {
           if (r.judgeScores && r.judgeScores.length > 1) {
-            // Multiple judges — show individual scores then avg
             const individualScores = r.judgeScores
-              .map((j) => `${j.provider}=${j.score}`)
+              .map((j) =>
+                j.score === -1
+                  ? `${j.provider}=ERR`
+                  : `${j.provider}=${j.score}`,
+              )
               .join(" ");
             const closestReason =
               r.judgeScores.find((j) => Math.abs(j.score - r.score!) < 1)
                 ?.reason ?? r.reason;
-            reason = `llm_judge [${individualScores}] → avg ${r.score}/10 — ${truncate(closestReason, 40)}`;
+            reason = `llm_judge [${individualScores}] → avg ${r.score}/10 — ${truncate(closestReason, 60)}`;
           } else {
-            reason = `llm_judge ${r.score}/10 — ${truncate(r.reason, 45)}`;
+            reason = `llm_judge ${r.score}/10 — ${truncate(r.reason, 65)}`;
           }
         } else if (r.expectDescription) {
-          reason = `expected to ${r.expectDescription}`;
+          reason = `expected: ${r.expectDescription}`;
         }
+
+        // File path if available (set by CLI via PHASIO_TEST_FILE env var)
+        const testFile = process.env.PHASIO_TEST_FILE;
+
         if (reason) {
-          const label = multiProvider ? `${v.provider}/${v.label}` : v.label;
-          console.log(`       ${DIM}${padRight(label, 14)}${reason}${RESET}`);
+          const fileSuffix = testFile ? ` ${DIM}(${testFile})${RESET}` : "";
+          console.log(
+            `       ${DIM}${padRight(label, 14)}${RED}${reason}${RESET}${fileSuffix}`,
+          );
+        }
+
+        // Show full model output — no truncation, developer needs to see everything
+        if (r.output) {
+          const lines = r.output.trim().split("\n");
+          console.log(
+            `       ${DIM}${padRight("", 14)}┌─ output ${"─".repeat(50)}${RESET}`,
+          );
+          for (const line of lines) {
+            console.log(`       ${DIM}${padRight("", 14)}│ ${line}${RESET}`);
+          }
+          console.log(
+            `       ${DIM}${padRight("", 14)}└${"─".repeat(58)}${RESET}`,
+          );
         }
       }
     }
