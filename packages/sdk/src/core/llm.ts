@@ -42,12 +42,32 @@ export async function callLlm(
   return { output, latencyMs: Date.now() - start };
 }
 
+// Sentinel score used when judge response cannot be parsed
+// Excluded from average so a bad parse doesn't tank real scores
+const PARSE_ERROR_SCORE = -1;
+const PARSE_ERROR_REASON = "parse error — judge returned invalid JSON";
+
+function extractJson(raw: string): string {
+  // 1. Try raw as-is
+  // 2. Strip markdown code fences: ```json ... ``` or ``` ... ```
+  // 3. Extract first {...} block found in the string
+  const stripped = raw.replace(/```(?:json)?\n?([\s\S]*?)```/g, "$1").trim();
+  if (stripped.startsWith("{")) return stripped;
+  const match = raw.match(/\{[\s\S]*?\}/);
+  return match ? match[0] : "{}";
+}
+
 async function callSingleJudge(
   output: string,
   criteria: string,
   config: ProviderConfig,
 ): Promise<{ score: number; reason: string }> {
-  const systemPrompt = `You are an evaluator. Score the given output against the criteria from 1-10.\nRespond ONLY with a valid JSON object: {"score": 7, "reason": "your reason here"}\nNo markdown, no backticks, just raw JSON.`;
+  const systemPrompt = [
+    "You are an evaluator. Score the given output against the criteria from 1-10.",
+    "You MUST respond with ONLY a raw JSON object. No markdown, no backticks, no preamble.",
+    'Exact format required: {"score": 7, "reason": "your reason here"}',
+    "Score must be an integer from 1 to 10.",
+  ].join("\n");
   const userPrompt = `Criteria: ${criteria}\n\nOutput to evaluate: ${output}`;
   let raw = "{}";
 
@@ -71,13 +91,23 @@ async function callSingleJudge(
           { role: "user", content: userPrompt },
         ],
         temperature: 0,
+        response_format: { type: "json_object" },
       });
       raw = response.choices[0]?.message?.content ?? "{}";
     }
-    const parsed = JSON.parse(raw) as { score: number; reason: string };
-    return { score: parsed.score, reason: parsed.reason };
+
+    const extracted = extractJson(raw);
+    const parsed = JSON.parse(extracted) as { score: number; reason: string };
+
+    // Validate score is a real number in range
+    const score = Number(parsed.score);
+    if (isNaN(score) || score < 1 || score > 10) {
+      return { score: PARSE_ERROR_SCORE, reason: PARSE_ERROR_REASON };
+    }
+
+    return { score, reason: parsed.reason ?? "" };
   } catch {
-    return { score: 0, reason: "Failed to parse judge response" };
+    return { score: PARSE_ERROR_SCORE, reason: PARSE_ERROR_REASON };
   }
 }
 
@@ -103,25 +133,48 @@ export async function callLlmJudge(
     reason: r.reason,
   }));
 
-  // Average all judge scores
+  // Separate valid scores from parse errors
+  // Parse errors use sentinel -1 — excluded from average so they don't skew results
+  const validScores = judgeScores.filter((j) => j.score !== PARSE_ERROR_SCORE);
+  const errorScores = judgeScores.filter((j) => j.score === PARSE_ERROR_SCORE);
+
+  // If ALL judges failed to parse, that's a real problem — report it clearly
+  if (validScores.length === 0) {
+    return {
+      passed: false,
+      score: 0,
+      reason: `all judges failed to parse response (${judges.map((j) => j.provider).join(", ")})`,
+      judgeScores,
+    };
+  }
+
+  // Average only valid scores
   const avgScore =
-    judgeScores.reduce((s, j) => s + j.score, 0) / judgeScores.length;
+    validScores.reduce((s, j) => s + j.score, 0) / validScores.length;
   const roundedAvg = Math.round(avgScore * 10) / 10;
 
-  // Use the reason from the judge whose score is closest to the average
-  const closest = judgeScores.reduce((prev, curr) =>
+  // Use the reason from the valid judge closest to the average
+  const closest = validScores.reduce((prev, curr) =>
     Math.abs(curr.score - avgScore) < Math.abs(prev.score - avgScore)
       ? curr
       : prev,
   );
 
+  // Build reason — note any parse errors so developer can see them
+  const parseErrorNote =
+    errorScores.length > 0
+      ? ` [${errorScores.map((j) => j.provider).join(", ")}: parse error — excluded]`
+      : "";
+
+  const reason =
+    validScores.length === 1 && errorScores.length === 0
+      ? closest.reason
+      : `avg ${roundedAvg}/10 — ${closest.reason}${parseErrorNote}`;
+
   return {
     passed: roundedAvg >= 7,
     score: roundedAvg,
-    reason:
-      judgeScores.length === 1
-        ? closest.reason
-        : `avg ${roundedAvg}/10 — ${closest.reason}`,
+    reason,
     judgeScores,
   };
 }
