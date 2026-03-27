@@ -150,7 +150,11 @@ function buildRunnerScript(configFile: string, testFile: string): string {
     "sdkConfig.setGlobalConfig(cfg);",
     "require('" + testPath + "');",
     "setImmediate(async function() {",
-    "  await sdkClient.pe.run();",
+    "  var result = await sdkClient.pe.run();",
+    "  // Always exit with correct code — CLI manages overall pass/fail",
+    "  // exitOnFail in config only controls SDK's own exit, not CLI's",
+    "  if (!result.passed) process.exit(1);",
+    "  else process.exit(0);",
     "});",
   ];
 
@@ -212,7 +216,7 @@ async function main(): Promise<void> {
       stdio: "inherit",
       encoding: "utf8",
       shell: IS_WINDOWS,
-      env: { ...process.env },
+      env: { ...process.env, PHASIO_TEST_FILE: relative },
       cwd: process.cwd(),
     });
 
