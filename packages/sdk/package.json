@@ -13,8 +13,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "prepublishOnly": "npm run build",
-    "pub": "npm run build && npm link"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "llm",
