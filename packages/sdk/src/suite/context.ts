@@ -1,16 +1,19 @@
-import type { SuiteDefinition, HookFn } from "../types";
+import type { SuiteDefinition, HookFn } from '../types';
 
 // Global suite registry
 const suiteRegistry: SuiteDefinition[] = [];
 let onlyMode = false;
 
-// Current suite hooks — collected while describe() callback runs
-let currentHooks: SuiteDefinition["hooks"] = {
+// Current suite state — collected while describe() callback runs
+let currentHooks: SuiteDefinition['hooks'] = {
   beforeAll: [],
   beforeEach: [],
   afterAll: [],
   afterEach: [],
 };
+let currentRules: string[] = [];
+
+// ─── Registry ─────────────────────────────────────────────────────────────────
 
 export function registerSuite(suite: SuiteDefinition): void {
   suiteRegistry.push(suite);
@@ -24,6 +27,7 @@ export function clearSuites(): void {
   suiteRegistry.length = 0;
   onlyMode = false;
   resetCurrentHooks();
+  currentRules = [];
 }
 
 export function setOnlyMode(): void {
@@ -34,7 +38,8 @@ export function isOnlyMode(): boolean {
   return onlyMode;
 }
 
-// Hook registration — called inside describe() callback
+// ─── Hooks ────────────────────────────────────────────────────────────────────
+
 export function registerBeforeAll(fn: HookFn): void {
   currentHooks.beforeAll.push(fn);
 }
@@ -51,7 +56,6 @@ export function registerAfterEach(fn: HookFn): void {
   currentHooks.afterEach.push(fn);
 }
 
-// Called by _registerSuite before running the callback
 export function resetCurrentHooks(): void {
   currentHooks = {
     beforeAll: [],
@@ -61,9 +65,20 @@ export function resetCurrentHooks(): void {
   };
 }
 
-// Called by _registerSuite after running the callback to capture hooks
-export function consumeCurrentHooks(): SuiteDefinition["hooks"] {
+export function consumeCurrentHooks(): SuiteDefinition['hooks'] {
   const hooks = { ...currentHooks };
   resetCurrentHooks();
   return hooks;
+}
+
+// ─── Rules ────────────────────────────────────────────────────────────────────
+
+export function setCurrentRules(rules: string[]): void {
+  currentRules = [...rules];
+}
+
+export function consumeCurrentRules(): string[] {
+  const rules = [...currentRules];
+  currentRules = [];
+  return rules;
 }

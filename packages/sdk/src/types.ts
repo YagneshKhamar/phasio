@@ -1,4 +1,6 @@
-export type Provider = "openai" | "anthropic";
+// ─── Providers ────────────────────────────────────────────────────────────────
+
+export type Provider = 'openai' | 'anthropic';
 
 export interface ProviderConfig {
   provider: Provider;
@@ -6,20 +8,45 @@ export interface ProviderConfig {
   model: string;
 }
 
+// ─── Hooks ────────────────────────────────────────────────────────────────────
+
 export type HookFn = () => void | Promise<void>;
+
+// ─── Expect types ─────────────────────────────────────────────────────────────
 
 export type ExpectFn = (output: string) => boolean | Promise<boolean>;
 
+/** A validator function with an optional description for terminal output */
+export interface DescribedFn extends ExpectFn {
+  _desc?: string;
+}
+
 export type Expect =
-  | string
+  | string                              // shorthand "contains:x" OR natural language
   | RegExp
   | ExpectFn
-  | { type: "llm_judge"; criteria: string };
+  | { type: 'llm_judge'; criteria: string }
+  | Expect[];                           // multiple expects — ALL must pass
+
+// ─── Versions ────────────────────────────────────────────────────────────────
 
 export interface PromptVersion {
-  label: string;
+  label: string;   // e.g. "v1", "v2", "gpt4-tuned"
   template: string; // must contain {{input}}
 }
+
+// ─── Suite options (optional 2nd arg to describe()) ──────────────────────────
+
+export interface SuiteOptions {
+  /** Matches Prompt.slug in the dashboard for correct telemetry attribution */
+  promptSlug?: string;
+  /** Override global config versions for this suite only */
+  versions?: PromptVersion[];
+  /** Override global config providers for this suite only */
+  providers?: ProviderConfig[];
+}
+
+// ─── Test definition ──────────────────────────────────────────────────────────
 
 export interface TestDefinition {
   name: string;
@@ -29,9 +56,13 @@ export interface TestDefinition {
   skip?: boolean;
 }
 
+// ─── Suite definition (internal registry) ────────────────────────────────────
+
 export interface SuiteDefinition {
   name: string;
+  options: SuiteOptions;
   tests: TestDefinition[];
+  rules: string[];   // suite-level assertions applied to every test
   only?: boolean;
   skip?: boolean;
   hooks: {
@@ -42,12 +73,16 @@ export interface SuiteDefinition {
   };
 }
 
+// ─── Judge types ──────────────────────────────────────────────────────────────
+
 export interface JudgeScore {
   provider: string;
   model: string;
-  score: number;
+  score: number;   // 1–10, or -1 on parse error
   reason: string;
 }
+
+// ─── Results ─────────────────────────────────────────────────────────────────
 
 export interface CaseResult {
   name: string;
@@ -81,6 +116,7 @@ export interface TestResult {
 
 export interface SuiteResult {
   name: string;
+  promptSlug?: string;
   passed: boolean;
   totalTests: number;
   passedTests: number;
@@ -99,18 +135,58 @@ export interface RunResult {
   duration: number;
 }
 
-export interface ReportStatus {
-  passed: boolean;
-  reason: string;
+// ─── Config ───────────────────────────────────────────────────────────────────
+
+export interface TelemetryConfig {
+  enabled: boolean;
+  /** Never send test inputs/outputs to Phasio. Default: false */
+  sendInputs?: boolean;
 }
 
 export interface PhasioConfig {
-  apiKey: string;
+  /** Project-scoped API key (preferred) */
+  projectKey?: string;
+  /** Legacy user-scoped key — still accepted, maps to projectKey internally */
+  apiKey?: string;
   providers: ProviderConfig | ProviderConfig[];
   judgeProviders?: ProviderConfig | ProviderConfig[];
+  /** Global default versions — used when suite has no version override */
   versions?: PromptVersion[];
-  telemetry?: boolean;
+  /** true = send telemetry with defaults. false/undefined = no telemetry */
+  telemetry?: boolean | TelemetryConfig;
   failOnThreshold?: number;
   failOnAnyCase?: boolean;
   exitOnFail?: boolean;
+}
+
+// ─── Telemetry payload ────────────────────────────────────────────────────────
+
+export interface TelemetryRunPayload {
+  promptSlug: string;
+  versionLabel: string;
+  /** First 16 chars of sha256(template) — never the raw template */
+  templateHash: string;
+  provider: string;
+  model: string;
+  suiteName: string;
+  totalCases: number;
+  passedCases: number;
+  durationMs: number;
+}
+
+export interface TelemetryPayload {
+  apiKey: string;
+  sdkVersion: string;
+  passed: boolean;
+  totalTests: number;
+  passedTests: number;
+  durationMs: number;
+  runs: TelemetryRunPayload[];
+}
+
+// ─── Report status ────────────────────────────────────────────────────────────
+
+export interface ReportStatus {
+  passed: boolean;
+  reason: string;
 }
