@@ -1,60 +1,56 @@
-import OpenAI from "openai";
-import Anthropic from "@anthropic-ai/sdk";
-import type { ProviderConfig, JudgeScore } from "../types";
+import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
+import type { ProviderConfig, JudgeScore } from '../types';
+
+const PARSE_ERROR_SCORE = -1;
+const PARSE_ERROR_REASON = 'parse error — judge returned invalid JSON';
+const JUDGE_PASS_THRESHOLD = 7;
+
+// ─── LLM call ─────────────────────────────────────────────────────────────────
 
 export async function callLlm(
   prompt: string,
   config: ProviderConfig,
 ): Promise<{ output: string; latencyMs: number }> {
   const start = Date.now();
-  let output = "";
+  let output = '';
 
   try {
-    if (config.provider === "anthropic") {
+    if (config.provider === 'anthropic') {
       const client = new Anthropic({ apiKey: config.llmKey });
       const response = await client.messages.create({
         model: config.model,
         max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: 'user', content: prompt }],
       });
       const block = response.content[0];
-      output = block.type === "text" ? block.text : "";
+      output = (block?.type === 'text' ? block.text : '') ?? '';
     } else {
       const client = new OpenAI({ apiKey: config.llmKey });
       const response = await client.chat.completions.create({
         model: config.model,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: 'user', content: prompt }],
         temperature: 0,
       });
-      output = response.choices[0]?.message?.content ?? "";
+      output = response.choices[0]?.message?.content ?? '';
     }
   } catch (err: unknown) {
     const error = err as { status?: number; message?: string };
-    if (error.status === 401)
-      throw new Error(`Invalid ${config.provider} API key`);
-    if (error.status === 429)
-      throw new Error(`${config.provider} rate limit exceeded`);
-    throw new Error(
-      `${config.provider} error: ${error.message ?? "Unknown error"}`,
-    );
+    if (error.status === 401) throw new Error(`Invalid ${config.provider} API key`);
+    if (error.status === 429) throw new Error(`${config.provider} rate limit exceeded`);
+    throw new Error(`${config.provider} error: ${error.message ?? 'Unknown error'}`);
   }
 
   return { output, latencyMs: Date.now() - start };
 }
 
-// Sentinel score used when judge response cannot be parsed
-// Excluded from average so a bad parse doesn't tank real scores
-const PARSE_ERROR_SCORE = -1;
-const PARSE_ERROR_REASON = "parse error — judge returned invalid JSON";
+// ─── Judge ────────────────────────────────────────────────────────────────────
 
 function extractJson(raw: string): string {
-  // 1. Try raw as-is
-  // 2. Strip markdown code fences: ```json ... ``` or ``` ... ```
-  // 3. Extract first {...} block found in the string
-  const stripped = raw.replace(/```(?:json)?\n?([\s\S]*?)```/g, "$1").trim();
-  if (stripped.startsWith("{")) return stripped;
+  const stripped = raw.replace(/```(?:json)?\n?([\s\S]*?)```/g, '$1').trim();
+  if (stripped.startsWith('{')) return stripped;
   const match = raw.match(/\{[\s\S]*?\}/);
-  return match ? match[0] : "{}";
+  return match ? match[0] : '{}';
 }
 
 async function callSingleJudge(
@@ -63,49 +59,49 @@ async function callSingleJudge(
   config: ProviderConfig,
 ): Promise<{ score: number; reason: string }> {
   const systemPrompt = [
-    "You are an evaluator. Score the given output against the criteria from 1-10.",
-    "You MUST respond with ONLY a raw JSON object. No markdown, no backticks, no preamble.",
-    'Exact format required: {"score": 7, "reason": "your reason here"}',
-    "Score must be an integer from 1 to 10.",
-  ].join("\n");
+    'You are an evaluator. Score the given output against the criteria from 1-10.',
+    'You MUST respond with ONLY a raw JSON object. No markdown, no backticks, no preamble.',
+    '{"score": 7, "reason": "your reason here"}',
+    'Score must be an integer from 1 to 10.',
+  ].join('\n');
+
   const userPrompt = `Criteria: ${criteria}\n\nOutput to evaluate: ${output}`;
-  let raw = "{}";
+  let raw = '{}';
 
   try {
-    if (config.provider === "anthropic") {
+    if (config.provider === 'anthropic') {
       const client = new Anthropic({ apiKey: config.llmKey });
       const response = await client.messages.create({
         model: config.model,
         max_tokens: 256,
         system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
+        messages: [{ role: 'user', content: userPrompt }],
       });
       const block = response.content[0];
-      raw = block.type === "text" ? block.text : "{}";
+      raw = (block?.type === 'text' ? block.text : '{}') ?? '{}';
     } else {
       const client = new OpenAI({ apiKey: config.llmKey });
       const response = await client.chat.completions.create({
         model: config.model,
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
         ],
         temperature: 0,
-        response_format: { type: "json_object" },
+        response_format: { type: 'json_object' },
       });
-      raw = response.choices[0]?.message?.content ?? "{}";
+      raw = response.choices[0]?.message?.content ?? '{}';
     }
 
     const extracted = extractJson(raw);
     const parsed = JSON.parse(extracted) as { score: number; reason: string };
-
-    // Validate score is a real number in range
     const score = Number(parsed.score);
+
     if (isNaN(score) || score < 1 || score > 10) {
       return { score: PARSE_ERROR_SCORE, reason: PARSE_ERROR_REASON };
     }
 
-    return { score, reason: parsed.reason ?? "" };
+    return { score, reason: parsed.reason ?? '' };
   } catch {
     return { score: PARSE_ERROR_SCORE, reason: PARSE_ERROR_REASON };
   }
@@ -115,66 +111,46 @@ export async function callLlmJudge(
   output: string,
   criteria: string,
   judges: ProviderConfig[],
-): Promise<{
-  passed: boolean;
-  score: number;
-  reason: string;
-  judgeScores: JudgeScore[];
-}> {
-  // Run all judges in parallel
+): Promise<{ passed: boolean; score: number; reason: string; judgeScores: JudgeScore[] }> {
   const individualResults = await Promise.all(
     judges.map((judge) => callSingleJudge(output, criteria, judge)),
   );
 
   const judgeScores: JudgeScore[] = individualResults.map((r, i) => ({
-    provider: judges[i].provider,
-    model: judges[i].model,
+    provider: judges[i]!.provider,
+    model: judges[i]!.model,
     score: r.score,
     reason: r.reason,
   }));
 
-  // Separate valid scores from parse errors
-  // Parse errors use sentinel -1 — excluded from average so they don't skew results
   const validScores = judgeScores.filter((j) => j.score !== PARSE_ERROR_SCORE);
   const errorScores = judgeScores.filter((j) => j.score === PARSE_ERROR_SCORE);
 
-  // If ALL judges failed to parse, that's a real problem — report it clearly
   if (validScores.length === 0) {
     return {
       passed: false,
       score: 0,
-      reason: `all judges failed to parse response (${judges.map((j) => j.provider).join(", ")})`,
+      reason: `all judges failed to parse response (${judges.map((j) => j.provider).join(', ')})`,
       judgeScores,
     };
   }
 
-  // Average only valid scores
-  const avgScore =
-    validScores.reduce((s, j) => s + j.score, 0) / validScores.length;
+  const avgScore = validScores.reduce((s, j) => s + j.score, 0) / validScores.length;
   const roundedAvg = Math.round(avgScore * 10) / 10;
 
-  // Use the reason from the valid judge closest to the average
   const closest = validScores.reduce((prev, curr) =>
-    Math.abs(curr.score - avgScore) < Math.abs(prev.score - avgScore)
-      ? curr
-      : prev,
+    Math.abs(curr.score - avgScore) < Math.abs(prev.score - avgScore) ? curr : prev,
   );
 
-  // Build reason — note any parse errors so developer can see them
   const parseErrorNote =
     errorScores.length > 0
-      ? ` [${errorScores.map((j) => j.provider).join(", ")}: parse error — excluded]`
-      : "";
+      ? ` [${errorScores.map((j) => j.provider).join(', ')}: parse error — excluded]`
+      : '';
 
   const reason =
     validScores.length === 1 && errorScores.length === 0
       ? closest.reason
       : `avg ${roundedAvg}/10 — ${closest.reason}${parseErrorNote}`;
 
-  return {
-    passed: roundedAvg >= 7,
-    score: roundedAvg,
-    reason,
-    judgeScores,
-  };
+  return { passed: roundedAvg >= JUDGE_PASS_THRESHOLD, score: roundedAvg, reason, judgeScores };
 }

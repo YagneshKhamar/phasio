@@ -1,7 +1,7 @@
 {
   "name": "@phasio/sdk",
-  "version": "0.4.3",
-  "description": "Test and evaluate LLM prompts before production. A/B compare prompt versions with rule-based and LLM-as-a-judge checks.",
+  "version": "0.5.0",
+  "description": "Test and evaluate LLM prompts before production. Rule-based and LLM-as-a-judge checks with natural language assertions.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -22,7 +22,8 @@
     "testing",
     "openai",
     "anthropic",
-    "ai"
+    "ai",
+    "natural-language-testing"
   ],
   "author": "AppUnik",
   "license": "MIT",
