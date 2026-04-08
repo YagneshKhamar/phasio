@@ -6,13 +6,13 @@ export {
   beforeEach,
   afterAll,
   afterEach,
-} from "./client";
+} from './client';
 
 // Config
-export { defineConfig } from "./config";
+export { defineConfig } from './config';
 
-// Validator helpers
-export { contains, notContains, matches, llmJudge } from "./core/validators";
+// Validators
+export { contains, notContains, matches, llmJudge } from './core/validators';
 
 // Types
 export type {
@@ -20,6 +20,7 @@ export type {
   ProviderConfig,
   Provider,
   PromptVersion,
+  SuiteOptions,
   TestDefinition,
   SuiteDefinition,
   RunResult,
@@ -32,4 +33,5 @@ export type {
   ReportStatus,
   Expect,
   ExpectFn,
-} from "./types";
+  TelemetryConfig,
+} from './types';
