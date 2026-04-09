@@ -6,13 +6,13 @@ export {
   beforeEach,
   afterAll,
   afterEach,
-} from './client';
+} from "./client";
 
 // Config
-export { defineConfig } from './config';
+export { defineConfig } from "./config";
 
 // Validators
-export { contains, notContains, matches, llmJudge } from './core/validators';
+export { contains, notContains, matches, llmJudge } from "./core/validators";
 
 // Types
 export type {
@@ -34,4 +34,12 @@ export type {
   Expect,
   ExpectFn,
   TelemetryConfig,
-} from './types';
+} from "./types";
+
+// add for Evaluate
+export { evaluate } from "./api/evaluate";
+export type {
+  EvaluateOptions,
+  EvaluateResult,
+  EvaluateCase,
+} from "./api/evaluate";
