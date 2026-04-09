@@ -47,3 +47,6 @@ phasio-runner-*.js
 package-lock.json
 
 *.zip
+
+.claude/*
+.claude/
