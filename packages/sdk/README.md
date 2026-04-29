@@ -17,7 +17,7 @@ npm install -D ts-node typescript   # required peer deps
 import { defineConfig } from "@phasio/sdk";
 
 export default defineConfig({
-  apiKey: process.env.PHASIO_API_KEY, // from phasio.dev → Settings → API Keys
+  projectKey: process.env.PHASIO_PROJECT_KEY, // from phasio.dev → Project → Project Key
   telemetry: true, // sync results to your phasio.dev dashboard
   failOnThreshold: 80, // fail if avg score drops below 80%
   exitOnFail: true, // exit(1) on failure — CI fails automatically
@@ -211,7 +211,7 @@ If `judgeProviders` is not set, the run providers are used as judges.
 
 | Option            | Type                                 | Default                   | Description                                        |
 | ----------------- | ------------------------------------ | ------------------------- | -------------------------------------------------- |
-| `apiKey`          | `string`                             | required                  | Your Phasio API key from phasio.dev                |
+| `projectKey`      | `string`                             | required                  | Project-scoped key from your Project page → Project Key section. Legacy `apiKey` still accepted but deprecated. |
 | `providers`       | `ProviderConfig \| ProviderConfig[]` | required                  | One or more LLM providers to run prompts           |
 | `judgeProviders`  | `ProviderConfig \| ProviderConfig[]` | falls back to `providers` | Provider(s) used for `llmJudge()` scoring          |
 | `versions`        | `PromptVersion[]`                    | required                  | Prompt versions to test — must include `{{input}}` |
@@ -219,6 +219,8 @@ If `judgeProviders` is not set, the run providers are used as judges.
 | `failOnThreshold` | `number`                             | none                      | Fail if avg score % drops below this value         |
 | `failOnAnyCase`   | `boolean`                            | `false`                   | Fail if any single test case fails                 |
 | `exitOnFail`      | `boolean`                            | `true`                    | `process.exit(1)` on failure                       |
+
+> **Note:** `projectKey` is the preferred option as of v0.5.0. The legacy `apiKey` field still works but is deprecated.
 
 ### `ProviderConfig`
 
@@ -262,7 +264,7 @@ You can also set the default test directory in `package.json`:
 - name: Run prompt evals
   run: npx phasio
   env:
-    PHASIO_API_KEY: ${{ secrets.PHASIO_API_KEY }}
+    PHASIO_PROJECT_KEY: ${{ secrets.PHASIO_PROJECT_KEY }}
     OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
