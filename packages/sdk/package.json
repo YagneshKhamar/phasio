@@ -1,6 +1,6 @@
 {
   "name": "@phasio/sdk",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Test and evaluate LLM prompts before production. Rule-based and LLM-as-a-judge checks with natural language assertions.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
